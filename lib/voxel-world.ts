@@ -14,22 +14,6 @@ export const BLOCK = {
   bedrock: 13,
   path: 14,
 } as const;
-export const NAMES: Record<number, string> = {
-  1: '草方块',
-  2: '泥土',
-  3: '石头',
-  4: '橡木板',
-  5: '树叶',
-  6: '陶瓦',
-  7: '玻璃',
-  8: '河水',
-  9: '原木',
-  10: '沙土',
-  11: '耕地',
-  12: '南瓜',
-  13: '基岩',
-  14: '小径',
-};
 export const HOTBAR = [1, 3, 4, 5, 7, 6];
 export type Vec = { x: number; y: number; z: number };
 export const key = (x: number, y: number, z: number) => [x, y, z].join(',');

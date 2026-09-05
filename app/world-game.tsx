@@ -10,15 +10,24 @@ import {
   Box,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { HOTBAR, NAMES } from '@/lib/voxel-world';
+import { HOTBAR } from '@/lib/voxel-world';
+import {
+  DEFAULT_LOCALE,
+  translations,
+  blockName,
+  readLocale,
+  writeLocale,
+  type Locale,
+  type GameError,
+} from '@/lib/i18n';
 import type { VoxelGame, GameState } from '@/lib/voxel-game';
 const initial: GameState = {
   ready: false,
   playing: false,
   started: false,
   selected: 0,
-  target: '',
-  message: '',
+  target: null,
+  message: null,
   mode: '',
   coords: '',
 };
@@ -26,7 +35,21 @@ export default function Game() {
   const host = useRef<HTMLDivElement>(null),
     game = useRef<VoxelGame | null>(null);
   const [state, setState] = useState(initial);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<GameError | null>(null);
+  const [locale, setLocale] = useState<Locale>(DEFAULT_LOCALE);
+  const t = translations[locale];
+  useEffect(() => setLocale(readLocale()), []);
+  useEffect(() => {
+    document.documentElement.lang = locale;
+    document.title = t.title;
+    document
+      .querySelector('meta[name="description"]')
+      ?.setAttribute('content', t.description);
+  }, [locale, t]);
+  const changeLocale = (next: Locale) => {
+    setLocale(next);
+    writeLocale(next);
+  };
   useEffect(() => {
     let cancelled = false;
     import('@/lib/voxel-game')
@@ -35,13 +58,11 @@ export default function Game() {
           try {
             game.current = new VoxelGame(host.current, setState);
           } catch (e) {
-            setError(
-              '无法启动 3D 画面，请使用支持 WebGL 的浏览器，并开启硬件加速。',
-            );
+            setError('webgl');
             console.error(e);
           }
       })
-      .catch(() => setError('场景加载失败，请刷新页面重试。'));
+      .catch(() => setError('load'));
     return () => {
       cancelled = true;
       game.current?.dispose();
@@ -50,25 +71,52 @@ export default function Game() {
   }, []);
   return (
     <main className="game-shell">
-      <div className="world-canvas" ref={host} aria-label="第一人称方块世界" />
+      <div className="world-canvas" ref={host} aria-label={t.canvasLabel} />
       <header className="world-header">
         <div className="brand">
           <Box size={23} />
           <div>
-            <strong>林间小屋</strong>
-            <span>我的方块世界</span>
+            <strong>{t.brand}</strong>
+            <span>{t.subtitle}</span>
           </div>
         </div>
         <div className="header-right">
           <span className="day-pill">
             <Sun size={16} />
-            晴天 · 创造模式
+            {t.weather}
           </span>
+          <div
+            className="language-switch"
+            role="group"
+            aria-label={t.languageLabel}
+            onKeyDown={(event) => {
+              if (event.key !== 'Escape') event.stopPropagation();
+            }}
+          >
+            <Button
+              className="language-option"
+              lang="en"
+              aria-label="English"
+              aria-pressed={locale === 'en'}
+              onClick={() => changeLocale('en')}
+            >
+              EN
+            </Button>
+            <Button
+              className="language-option"
+              lang="zh-CN"
+              aria-label="简体中文"
+              aria-pressed={locale === 'zh-CN'}
+              onClick={() => changeLocale('zh-CN')}
+            >
+              中文
+            </Button>
+          </div>
           {state.playing && (
             <Button
               className="icon-control"
               onClick={() => game.current?.pause()}
-              aria-label="暂停游戏"
+              aria-label={t.pause}
             >
               <Pause size={18} />
             </Button>
@@ -78,29 +126,25 @@ export default function Game() {
       {!state.playing && (
         <section className="start-layer">
           <div className="start-card">
-            <span className="eyebrow">YOUR LITTLE WORLD</span>
-            <h1>{state.started ? '歇一会儿。' : '世界，等你来走走。'}</h1>
-            <p>
-              {state.started
-                ? '小屋和树林就在这里，随时继续探索。'
-                : '穿过木桥，走进树林。也可以拆下一块，建一点自己的东西。'}
-            </p>
+            <span className="eyebrow">{t.eyebrow}</span>
+            <h1>{state.started ? t.paused : t.welcome}</h1>
+            <p>{state.started ? t.pauseDescription : t.introduction}</p>
             <div className="control-guide">
               <span>
                 <Move size={17} />
-                <kbd>W A S D</kbd> 移动
+                <kbd>W A S D</kbd> {t.move}
               </span>
               <span>
-                <kbd>空格</kbd> 跳跃
+                <kbd>{t.space}</kbd> {t.jump}
               </span>
               <span>
                 <MousePointer2 size={17} />
-                左键挖掘 · 右键放置
+                {t.mouseActions}
               </span>
             </div>
             {error ? (
               <p role="alert" className="error-message">
-                {error}
+                {t.errors[error]}
               </p>
             ) : (
               <Button
@@ -108,17 +152,11 @@ export default function Game() {
                 disabled={!state.ready}
                 onClick={() => game.current?.start()}
               >
-                {state.ready
-                  ? state.started
-                    ? '继续探索'
-                    : '进入世界'
-                  : '正在准备世界…'}
+                {state.ready ? (state.started ? t.resume : t.enter) : t.loading}
                 <ArrowRight size={21} />
               </Button>
             )}
-            <div className="start-note">
-              鼠标环顾四周 · 数字 1–6 选方块 · Esc 暂停
-            </div>
+            <div className="start-note">{t.startNote}</div>
             {state.started && (
               <Button
                 variant="ghost"
@@ -129,7 +167,7 @@ export default function Game() {
                 }}
               >
                 <Home size={16} />
-                回到小屋前
+                {t.returnHome}
               </Button>
             )}
           </div>
@@ -138,24 +176,22 @@ export default function Game() {
       {state.playing && (
         <>
           <div className="crosshair" aria-hidden="true" />
-          <div className="target-label">{state.target}</div>
+          <div className="target-label">{blockName(locale, state.target)}</div>
           <div className="play-tip">
-            {state.mode === 'drag'
-              ? '按住鼠标拖动视角 · 点击挖掘 · 右键放置'
-              : '左键 挖掘　右键 放置'}
-            <span>WASD 移动 · 空格 跳跃 · Shift 快跑 · R 回家</span>
+            {state.mode === 'drag' ? t.dragActions : t.mouseActions}
+            <span>{t.movementHint}</span>
           </div>
           <div className="hotbar-wrap">
             <span className="selected-name">
-              {NAMES[HOTBAR[state.selected]]}
+              {blockName(locale, HOTBAR[state.selected])}
             </span>
-            <div className="hotbar" aria-label="选择建造方块">
+            <div className="hotbar" aria-label={t.hotbarLabel}>
               {HOTBAR.map((b, i) => (
                 <Button
                   key={b}
                   className={'slot ' + (i === state.selected ? 'active' : '')}
                   onClick={() => game.current?.select(i)}
-                  aria-label={`${i + 1} ${NAMES[b]}`}
+                  aria-label={`${i + 1} ${blockName(locale, b)}`}
                   aria-pressed={i === state.selected}
                 >
                   <span className={'block-swatch block-' + b} />
@@ -166,7 +202,7 @@ export default function Game() {
           </div>
           <div className="coordinates">{state.coords}</div>
           <div className="game-message" role="status">
-            {state.message}
+            {state.message ? t.messages[state.message] : null}
           </div>
         </>
       )}
@@ -174,15 +210,15 @@ export default function Game() {
         <div className="touch-controls">
           <div className="touch-pad">
             {[
-              { label: '前进', text: '↑', x: 0, z: 1 },
-              { label: '向左', text: '←', x: -1, z: 0 },
-              { label: '后退', text: '↓', x: 0, z: -1 },
-              { label: '向右', text: '→', x: 1, z: 0 },
+              { label: 'forward' as const, text: '↑', x: 0, z: 1 },
+              { label: 'left' as const, text: '←', x: -1, z: 0 },
+              { label: 'backward' as const, text: '↓', x: 0, z: -1 },
+              { label: 'right' as const, text: '→', x: 1, z: 0 },
             ].map((d) => (
               <Button
                 key={d.label}
                 className={'touch-key touch-' + d.label}
-                aria-label={d.label}
+                aria-label={t[d.label]}
                 onPointerDown={(e) => {
                   e.preventDefault();
                   e.currentTarget.setPointerCapture(e.pointerId);
@@ -196,17 +232,17 @@ export default function Game() {
             ))}
           </div>
           <div className="touch-actions">
-            <Button onClick={() => game.current?.jump()}>跳跃</Button>
-            <Button onClick={() => game.current?.action()}>挖掘</Button>
-            <Button onClick={() => game.current?.action(true)}>放置</Button>
+            <Button onClick={() => game.current?.jump()}>{t.jump}</Button>
+            <Button onClick={() => game.current?.action()}>{t.mine}</Button>
+            <Button onClick={() => game.current?.action(true)}>
+              {t.place}
+            </Button>
           </div>
-          <span className="touch-hint">拖动画面转动视角</span>
+          <span className="touch-hint">{t.touchHint}</span>
         </div>
       )}
       <footer className="world-footer">
-        {state.playing
-          ? '创造模式 · 刷新后世界重置'
-          : '一座小屋，一片树林，和你的想象力。'}
+        {state.playing ? t.playingFooter : t.welcomeFooter}
       </footer>
     </main>
   );

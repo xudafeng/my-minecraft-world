@@ -1,14 +1,15 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { DEFAULT_LOCALE, translations } from '@/lib/i18n';
 export const metadata: Metadata = {
-  title: '我的世界 · 林间小屋',
-  description: '走进你的方块小世界。探索树林和小屋，挖掘方块，自由建造。',
+  title: translations[DEFAULT_LOCALE].title,
+  description: translations[DEFAULT_LOCALE].description,
 };
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="zh-CN">
+    <html lang={DEFAULT_LOCALE}>
       <body>{children}</body>
     </html>
   );

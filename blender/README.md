@@ -1,28 +1,28 @@
-# Blender 场景
+# Blender scene
 
-**简体中文** | [English](README.en.md) · [返回项目首页](../README.md)
+[简体中文](README.zh-CN.md) | **English** · [Back to the project](../README.md)
 
-- `voxel-grove.blend`：已完成的可编辑工程，直接用 Blender 打开。
-- `build_world.py`：从空场景生成地形、小屋、桥梁、树林、麦田与道具的脚本。
-- `../docs/images/blender-scene.png`：1800 × 1500 的最终渲染预览。
+- `voxel-grove.blend`: the finished, editable project. Open it directly in Blender.
+- `build_world.py`: a script that generates the terrain, cabin, bridge, trees, wheat field, and props from an empty scene.
+- `../docs/images/blender-scene.png`: the final render preview at 1800 × 1500 pixels.
 
-工程在 Blender 5.2.1 LTS 上制作和验证。所有材质内置，不需要下载贴图。打开工程后可在视口检查与编辑，按 `F12` 渲染。
+The project was created and verified in Blender 5.2.1 LTS. All materials are included; no texture downloads are needed. Inspect and edit the scene in the viewport, or press `F12` to render it.
 
-## 重新生成
+## Regenerate the scene
 
-在仓库根目录运行以下命令。它会启动一个独立的 Blender 后台进程，从默认空场景生成并渲染，不影响当前打开的 Blender 窗口。
+Run the following command from the repository root. It starts a separate Blender background process, generates the scene from the factory startup file, and renders it without affecting your currently open Blender window.
 
 ```bash
 blender --background --factory-startup --python blender/build_world.py
 ```
 
-macOS 如果没有 `blender` 命令，可以使用：
+On macOS, if `blender` is not in your PATH, use:
 
 ```bash
 /Applications/Blender.app/Contents/MacOS/Blender \
   --background --factory-startup --python blender/build_world.py
 ```
 
-输出为 `blender/我的世界_林间小屋.blend` 和 `blender/我的世界_高清预览.png`，不会覆盖仓库附带的 `voxel-grove.blend`。脚本固定随机种子；渲染需要一些时间，速度取决于设备。脚本尝试使用 Metal GPU，不可用时使用 CPU。
+The output files are `blender/我的世界_林间小屋.blend` and `blender/我的世界_高清预览.png`. They do not overwrite the included `voxel-grove.blend`. The script uses a fixed random seed. Rendering time depends on your hardware. It tries to use a Metal GPU and falls back to the CPU when unavailable.
 
-场景是可编辑模型，不含游戏控制器。要移动、跳跃、挖掘与搭建，请运行仓库根目录中的网页游戏。
+The scene contains editable models, without a game controller. To move, jump, mine, and build, run the browser game from the repository root.

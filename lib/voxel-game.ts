@@ -1,9 +1,9 @@
+import type { GameMessage } from './i18n';
 import * as THREE from 'three';
 import {
   VoxelWorld,
   BLOCK,
   hash,
-  NAMES,
   HOTBAR,
   type Vec,
   type Hit,
@@ -17,8 +17,8 @@ export type GameState = {
   playing: boolean;
   started: boolean;
   selected: number;
-  target: string;
-  message: string;
+  target: number | null;
+  message: GameMessage | null;
   mode: string;
   coords: string;
 };
@@ -94,8 +94,8 @@ export class VoxelGame {
     playing: false,
     started: false,
     selected: 0,
-    target: '',
-    message: '',
+    target: null,
+    message: null,
     mode: '',
     coords: '',
   };
@@ -418,7 +418,7 @@ export class VoxelGame {
       if (e.code === 'Space' && !e.repeat) this.jump();
       if (e.code === 'KeyR' && !e.repeat) {
         this.respawn();
-        this.notify('已回到小屋前');
+        this.notify('home');
       }
       if (/^Digit[1-6]$/.test(e.code))
         this.select(Number(e.code.slice(-1)) - 1);
@@ -445,7 +445,7 @@ export class VoxelGame {
     const lockError = () => {
       if (this.state.playing) {
         this.state.mode = 'drag';
-        this.notify('按住鼠标拖动视角，短按左键挖掘');
+        this.notify('dragHint');
       }
     };
     document.addEventListener('pointerlockchange', lockChange);
@@ -531,7 +531,7 @@ export class VoxelGame {
           promise.catch(() => {
             if (!this.disposed && this.state.playing) {
               this.state.mode = 'drag';
-              this.notify('按住鼠标拖动视角，短按左键挖掘');
+              this.notify('dragHint');
             }
           });
       } catch {
@@ -554,7 +554,7 @@ export class VoxelGame {
     this.state.selected = (index + HOTBAR.length) % HOTBAR.length;
     this.emit();
   }
-  notify(message: string) {
+  notify(message: GameMessage) {
     this.state.message = message;
     this.messageUntil = performance.now() + 2600;
     this.emit();
@@ -566,7 +566,7 @@ export class VoxelGame {
     this.updateTarget();
     const hit = this.hit;
     if (!hit) {
-      this.notify('靠近一点，准星对准方块');
+      this.notify('outOfReach');
       return;
     }
     const { x, y, z } = hit;
@@ -575,11 +575,11 @@ export class VoxelGame {
         ny = y + hit.normal.y,
         nz = z + hit.normal.z;
       if (Math.abs(nx) >= 30 || Math.abs(nz) >= 30 || ny > 24) {
-        this.notify('这里已到建造边界');
+        this.notify('worldEdge');
         return;
       }
       if (overlapsPlayer(this.pos, nx, ny, nz)) {
-        this.notify('不能把方块放在自己站的位置');
+        this.notify('playerOverlap');
         return;
       }
       if (
@@ -590,7 +590,7 @@ export class VoxelGame {
       this.world.set(nx, ny, nz, HOTBAR[this.state.selected]);
     } else {
       if (hit.block === BLOCK.bedrock) {
-        this.notify('基岩托着整个世界，无法挖掘');
+        this.notify('bedrock');
         return;
       }
       this.world.set(x, y, z, 0);
@@ -669,7 +669,7 @@ export class VoxelGame {
         this.hit.y + 0.5,
         this.hit.z + 0.5,
       );
-    this.state.target = this.hit ? NAMES[this.hit.block] : '';
+    this.state.target = this.hit?.block ?? null;
   }
   tick(time: number) {
     if (this.disposed) return;
@@ -715,7 +715,7 @@ export class VoxelGame {
         Math.abs(this.pos.z) > 35
       ) {
         this.respawn();
-        this.notify('已回到小屋前');
+        this.notify('home');
       }
       this.camera.position.set(this.pos.x, this.pos.y + 1.58, this.pos.z);
       this.camera.rotation.set(this.pitch, this.yaw, 0, 'YXZ');
@@ -753,7 +753,7 @@ export class VoxelGame {
         this.particles.splice(this.particles.indexOf(p), 1);
       }
     }
-    if (time > this.messageUntil) this.state.message = '';
+    if (time > this.messageUntil) this.state.message = null;
     if (time - this.lastEmit > 150) {
       this.state.coords =
         'X ' +

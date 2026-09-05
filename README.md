@@ -1,20 +1,20 @@
-# My Minecraft World · 我的方块世界
+# My Minecraft World
 
-**简体中文** | [English](README.en.md)
+[简体中文](README.zh-CN.md) | **English**
 
-一个 Minecraft 风格的林间小世界，从 Blender 方块场景延伸为第一人称网页小游戏。穿过木桥、走进小屋，在树林旁挖掘和搭建自己的世界。
+A Minecraft-style forest world that started as a Blender voxel scene and grew into a first-person browser game. Cross the wooden bridge, explore the cabin, and mine and place blocks to build your own corner of the world.
 
-使用 Codex 协助制作；包含网页游戏源码、Blender 场景生成脚本和可编辑工程。
+Created with help from Codex. This repository includes the browser game source, a Blender scene generator, and an editable Blender project.
 
-文档提供中英文版本；游戏界面目前为中文。
+The game and documentation support English and Simplified Chinese, with English as the default. Use the **EN / 中文** switch in the top-right corner to change the interface language. Your browser remembers your choice, and switching languages preserves your world and player position. If the mouse is locked, press `Esc` to pause before switching.
 
-![Blender 中的林间小屋场景](docs/images/blender-scene.png)
+![Forest cabin scene rendered in Blender](docs/images/blender-scene.png)
 
-_上图是 Blender 渲染图。网页游戏用 Three.js 重新搭建了同主题场景，两者不是完全相同的模型或画面。_
+_The image above is a Blender render. The browser game recreates the same theme in Three.js; its models and visuals differ from the Blender scene._
 
-## 本地运行
+## Run locally
 
-需要 Node.js 22.13 或更新版本、npm，以及支持 WebGL 的浏览器。首次安装需要联网；本地运行无需登录或配置云服务密钥。
+You need Node.js 22.13 or later, npm, and a browser with WebGL support. Installing dependencies requires an internet connection. Running locally requires no account or cloud service credentials.
 
 ```bash
 npm install
@@ -22,46 +22,47 @@ npm run build
 npm run start -- --ip 127.0.0.1 --port 4173
 ```
 
-在浏览器打开 <http://127.0.0.1:4173>，点击「进入世界」。保持终端运行，按 `Ctrl+C` 停止服务。
+Open <http://127.0.0.1:4173> in your browser and click **Enter world**. Keep the terminal running; press `Ctrl+C` to stop the server.
 
-修改代码时可以使用 `npm run dev`，打开终端打印的本地地址。
+For development, run `npm run dev` and open the local address printed in the terminal.
 
-## 玩法
+## How to play
 
-| 操作              | 按键                                           |
-| ----------------- | ---------------------------------------------- |
-| 移动              | W / A / S / D 或方向键                         |
-| 环顾              | 移动鼠标；浏览器不支持指针锁定时，按住左键拖动 |
-| 跳跃 / 快跑       | 空格 / Shift                                   |
-| 挖掘 / 放置       | 左键短按 / 右键                                |
-| 选择方块          | 数字 1–6、滚轮或点击物品栏                     |
-| 回到小屋前 / 暂停 | R / Esc                                        |
+| Action                      | Controls                                                                            |
+| --------------------------- | ----------------------------------------------------------------------------------- |
+| Move                        | W / A / S / D or arrow keys                                                         |
+| Look around                 | Move the mouse; if pointer lock is unavailable, hold the left mouse button and drag |
+| Jump / Sprint               | Space / Shift                                                                       |
+| Mine / Place                | Short left click / Right click                                                      |
+| Select a block              | Number keys 1–6, scroll wheel, or click the hotbar                                  |
+| Return to the cabin / Pause | R / Esc                                                                             |
 
-包含木屋、桥、河流、树林、麦田和两只装饰小羊；有重力、碰撞、挖掘粒子和六种可建造方块。玩家使用第一人称视角，画面中可以看到手臂。触屏界面提供移动、跳跃和建造按钮。
+The world includes a cabin, a bridge, a river, trees, a wheat field, and two decorative sheep. It features gravity, collision detection, mining particles, and six selectable building blocks. You play in first person with a visible arm. The touch interface provides buttons for movement, jumping, mining, and placing blocks.
 
-这是一个小型创造模式原型：**刷新页面会重置世界**，暂不支持存档、联机或生存系统。基岩不可挖掘，建造有边界；小羊是场景装饰，没有养殖玩法。
+This is a small creative-mode prototype: **refreshing the page resets the world**. Saving, multiplayer, and survival systems are not implemented. Bedrock cannot be mined, building is limited to the world bounds, and the sheep are decorative, without farming mechanics.
 
-## Blender 工程
+## Blender project
 
-使用 Blender 打开 [`blender/voxel-grove.blend`](blender/voxel-grove.blend)。地形、建筑、树木和道具均可编辑，材质内置。
+Open [`blender/voxel-grove.blend`](blender/voxel-grove.blend) in Blender. The terrain, buildings, trees, and props are editable, with all materials included.
 
-生成脚本与重建步骤见 [`blender/README.md`](blender/README.md)。Blender 工程用于建模和渲染，游玩入口是上面的网页游戏。
+See the [Blender guide](blender/README.md) for the generator and rebuild instructions. The Blender project is for modeling and rendering; use the browser game above to play.
 
-## 代码结构
+## Project structure
 
 ```text
-app/world-game.tsx       游戏界面与输入控件
-app/globals.css          界面样式
-lib/voxel-world.ts       世界生成、碰撞与射线检测
-lib/voxel-game.ts        Three.js 渲染、角色控制与方块交互
-tests/physics.test.ts    物理和交互边界测试
-blender/                可编辑场景与 Python 生成脚本
-docs/images/            Blender 渲染预览
+app/world-game.tsx       Game interface and input controls
+app/globals.css          Interface styles
+lib/voxel-world.ts       World generation, collisions, and raycasting
+lib/voxel-game.ts        Three.js rendering, player movement, and block interactions
+lib/i18n.ts              Translations and language preferences
+tests/                  Physics, interaction boundary, and language tests
+blender/                Editable scene and Python generator
+docs/images/            Blender render preview
 ```
 
-技术栈：TypeScript、React、Three.js、Vinext、Vite。开发与预览使用本地 Cloudflare Worker 模拟器。`.openai/hosting.json` 仅保留空配置，不绑定任何个人部署。
+Built with TypeScript, React, Three.js, Vinext, and Vite. Development and preview use a local Cloudflare Worker emulator. `.openai/hosting.json` contains empty configuration and is not tied to a personal deployment.
 
-## 验证
+## Validation
 
 ```bash
 npm test
@@ -69,6 +70,6 @@ npx tsc --noEmit
 npm run build
 ```
 
-测试覆盖出生点、门洞、重力、跳跃、墙壁与天花板碰撞、射线命中和放置边界。网页已在本机浏览器验证基础移动与方块交互；触屏控件尚未在真实手机上验证。
+Tests cover the spawn point, doorway, gravity, jumping, wall and ceiling collisions, ray hits, placement boundaries, and language preference storage. Basic movement and block interactions have been checked in a local browser. Touch controls have not yet been tested on a physical phone.
 
-本项目是受 Minecraft 方块风格启发的独立练习，与 Mojang 或 Microsoft 无关联。
+This is an independent project inspired by Minecraft's block-based style. It is not affiliated with Mojang or Microsoft.
