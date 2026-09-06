@@ -2,6 +2,8 @@
 
 **简体中文** | [English](README.md)
 
+**[直接在线游玩](https://xudafeng.github.io/my-minecraft-world/)**
+
 一个 Minecraft 风格的林间小世界，从 Blender 方块场景延伸为第一人称网页小游戏。穿过木桥、走进小屋，在树林旁挖掘和搭建自己的世界。
 
 使用 Codex 协助制作；包含网页游戏源码、Blender 场景生成脚本和可编辑工程。
@@ -25,6 +27,19 @@ npm run start -- --ip 127.0.0.1 --port 4173
 在浏览器打开 <http://127.0.0.1:4173>，点击「Enter world」（进入世界）。保持终端运行，按 `Ctrl+C` 停止服务。
 
 修改代码时可以使用 `npm run dev`，打开终端打印的本地地址。
+
+## GitHub Pages
+
+在线地址：<https://xudafeng.github.io/my-minecraft-world/>。[`.github/workflows/pages.yml`](.github/workflows/pages.yml) 会在 `main` 更新后自动测试、构建并部署。仓库 **Settings → Pages** 的发布来源设为 **GitHub Actions**。
+
+本地构建并预览同一个静态版本：
+
+```bash
+npm run build:pages
+npm run preview:pages
+```
+
+打开终端打印的地址，保留末尾的 `/my-minecraft-world/`。此构建复用游戏组件，不需要后端服务。资源路径在 `vite.pages.config.ts` 中按仓库子路径配置；部署到其他路径时，请修改其中的 `base`。
 
 ## 玩法
 
@@ -52,6 +67,8 @@ npm run start -- --ip 127.0.0.1 --port 4173
 ```text
 app/world-game.tsx       游戏界面与输入控件
 app/globals.css          界面样式
+github-pages/           GitHub Pages 静态浏览器入口
+vite.pages.config.ts    静态构建与仓库子路径
 lib/voxel-world.ts       世界生成、碰撞与射线检测
 lib/voxel-game.ts        Three.js 渲染、角色控制与方块交互
 lib/i18n.ts              中英文文案与语言偏好

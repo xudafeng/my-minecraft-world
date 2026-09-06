@@ -2,6 +2,8 @@
 
 [简体中文](README.zh-CN.md) | **English**
 
+**[Play in your browser](https://xudafeng.github.io/my-minecraft-world/)**
+
 A Minecraft-style forest world that started as a Blender voxel scene and grew into a first-person browser game. Cross the wooden bridge, explore the cabin, and mine and place blocks to build your own corner of the world.
 
 Created with help from Codex. This repository includes the browser game source, a Blender scene generator, and an editable Blender project.
@@ -25,6 +27,19 @@ npm run start -- --ip 127.0.0.1 --port 4173
 Open <http://127.0.0.1:4173> in your browser and click **Enter world**. Keep the terminal running; press `Ctrl+C` to stop the server.
 
 For development, run `npm run dev` and open the local address printed in the terminal.
+
+## GitHub Pages
+
+The game is published at <https://xudafeng.github.io/my-minecraft-world/>. The workflow in [`.github/workflows/pages.yml`](.github/workflows/pages.yml) tests, builds, and deploys it whenever `main` is updated. In the repository's **Settings → Pages**, the publishing source is **GitHub Actions**.
+
+To build and preview the same static version locally:
+
+```bash
+npm run build:pages
+npm run preview:pages
+```
+
+Open the address printed in the terminal, including `/my-minecraft-world/`. This build reuses the game component and needs no backend server. Its assets are configured for the repository subpath in `vite.pages.config.ts`; update `base` there if you host it under another path.
 
 ## How to play
 
@@ -52,6 +67,8 @@ See the [Blender guide](blender/README.md) for the generator and rebuild instruc
 ```text
 app/world-game.tsx       Game interface and input controls
 app/globals.css          Interface styles
+github-pages/           Static browser entry for GitHub Pages
+vite.pages.config.ts    Static build and project subpath
 lib/voxel-world.ts       World generation, collisions, and raycasting
 lib/voxel-game.ts        Three.js rendering, player movement, and block interactions
 lib/i18n.ts              Translations and language preferences
