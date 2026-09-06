@@ -172,8 +172,8 @@ export default function Game() {
                   <AvatarImage
                     src="https://avatars.githubusercontent.com/u/1011681?v=4&s=96"
                     alt={t.creatorAvatar}
-                    width={48}
-                    height={48}
+                    width={40}
+                    height={40}
                   />
                   <AvatarFallback>X</AvatarFallback>
                 </Avatar>

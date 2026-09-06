@@ -164,7 +164,7 @@ button:focus-visible,
   z-index: 2;
 }
 .start-card {
-  width: 460px;
+  width: 400px;
   max-width: 100%;
   text-shadow: 0 2px 24px #102f2555;
 }
@@ -187,14 +187,13 @@ h1 {
   font-size: 16px;
   line-height: 1.9;
   color: #e4eddf;
-  max-width: 340px;
   margin: 0 0 26px;
 }
 .control-guide {
   display: flex;
   gap: 15px 20px;
   flex-wrap: wrap;
-  max-width: 365px;
+  width: 100%;
   font-size: 14px;
   color: #e5ebde;
   margin-bottom: 32px;
@@ -203,6 +202,9 @@ h1 {
   display: flex;
   align-items: center;
   gap: 7px;
+}
+.control-guide > span:last-child {
+  flex-basis: 100%;
 }
 kbd {
   font: inherit;
@@ -217,7 +219,6 @@ kbd {
   font-size: 16px !important;
   border-radius: 6px !important;
   width: 100%;
-  max-width: 340px;
   padding: 0 22px !important;
   display: flex !important;
   justify-content: space-between;
@@ -243,8 +244,11 @@ kbd {
   align-items: center;
   gap: 12px;
   width: 100%;
-  max-width: 400px;
   margin-top: 22px;
+  padding: 12px 14px;
+  border: 1px solid #d9ed8d80;
+  border-radius: 6px;
+  background: #173b32b3;
 }
 .creator-link {
   display: inline-flex;
@@ -252,8 +256,8 @@ kbd {
   border-radius: 50%;
 }
 .creator-avatar {
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   border: 2px solid #d9ed8d80;
 }
 .creator-link:hover .creator-avatar {
@@ -265,20 +269,14 @@ kbd {
   align-items: center;
   gap: 12px;
   min-width: 0;
-  max-width: 340px;
-  padding: 12px 14px;
-  border: 1px solid #d9ed8d80;
-  border-radius: 6px;
-  background: #173b32b3;
+  align-self: stretch;
+  border-radius: 4px;
   color: #d9ed8d;
   text-decoration: none;
-  transition:
-    background 0.15s,
-    border-color 0.15s;
 }
-.github-link:hover {
-  background: #26463e;
-  border-color: #d9ed8d;
+.github-link:hover strong {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 .github-link > svg {
   flex-shrink: 0;
@@ -691,8 +689,6 @@ kbd {
   }
   .project-links {
     margin-top: 14px;
-  }
-  .github-link {
     padding: 10px 14px;
   }
   .world-footer {
