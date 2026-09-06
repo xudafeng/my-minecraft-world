@@ -698,3 +698,255 @@ kbd {
     bottom: 15px;
   }
 }
+
+/* Keep menus scrollable inside the header/footer, including short landscapes. */
+.start-layer {
+  inset: 82px 0 52px;
+  padding: 24px 9vw;
+  align-items: flex-start;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.start-card {
+  flex-shrink: 0;
+  margin-block: auto;
+}
+.touch-guide {
+  display: none;
+}
+.session-tools {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 20px;
+}
+.session-tools > button {
+  min-height: 42px;
+  height: auto;
+  padding: 8px 10px;
+  background: #1c4039;
+  color: #edf4e5;
+  border: 1px solid #ffffff33;
+  font-size: 14px;
+  white-space: normal;
+  text-align: left;
+  justify-content: flex-start;
+}
+.start-card .storage-note {
+  grid-column: 1 / -1;
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #cbd8cf;
+}
+.game-shell:not(.is-playing) .world-footer {
+  inset: auto 0 0;
+  padding: 12px max(16px, env(safe-area-inset-right))
+    max(12px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  background: #132b28f0;
+  min-height: 46px;
+  line-height: 1.6;
+}
+.edit-toolbar {
+  position: absolute;
+  bottom: 140px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+}
+.edit-toolbar button,
+.dialog-actions button {
+  min-height: 40px;
+  padding: 8px 12px;
+  background: #173e36ee;
+  border: 1px solid #e6f1d955;
+  color: #fffbee;
+}
+.materials-dialog,
+.import-dialog {
+  width: 520px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  padding: 24px;
+  background: #132f2b;
+  color: #fffbee;
+  border: 1px solid #d9ed8d66;
+  box-shadow: 0 24px 80px #0008;
+}
+.materials-dialog [data-slot='dialog-title'],
+.import-dialog [data-slot='dialog-title'] {
+  font-size: 24px;
+  line-height: 1.3;
+}
+.materials-dialog [data-slot='dialog-description'],
+.import-dialog [data-slot='dialog-description'] {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #cbd8cf;
+}
+.material-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.material-option {
+  height: auto;
+  min-height: 90px;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 6px;
+  white-space: normal;
+  background: #20453b;
+  color: #f3f7eb;
+  font-size: 14px;
+  border: 2px solid transparent;
+}
+.material-option[aria-pressed='true'] {
+  border-color: #d9ed8d;
+  background: #3f6042;
+}
+.material-option .block-swatch {
+  flex-shrink: 0;
+}
+.dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.dialog-actions .confirm-action {
+  background: #d9ed8d;
+  color: #23362b;
+}
+.menu-message {
+  top: 76px;
+  z-index: 5;
+}
+.block-2 {
+  background: #856043;
+}
+.block-8 {
+  background: #459facb0;
+}
+.block-9 {
+  background: repeating-linear-gradient(90deg, #705235 0 6px, #4e3926 6px 8px);
+}
+.block-10 {
+  background: #d5c38f;
+}
+.block-11 {
+  background: #674932;
+}
+.block-12 {
+  background: repeating-linear-gradient(90deg, #d58a35 0 7px, #b46d26 7px 9px);
+}
+.block-14 {
+  background: #c8b486;
+}
+@media (max-width: 900px) {
+  .start-layer {
+    inset: 78px 0 52px;
+    padding: 24px 8vw;
+  }
+  .play-tip {
+    bottom: 170px;
+  }
+  .edit-toolbar {
+    bottom: 124px;
+  }
+}
+@media (max-width: 600px) {
+  .start-layer {
+    inset: 72px 0 64px;
+    padding: 20px 24px;
+  }
+  .start-card {
+    margin-block: auto;
+  }
+  .world-header {
+    padding-top: max(16px, env(safe-area-inset-top));
+  }
+  .hotbar-wrap {
+    bottom: calc(46px + env(safe-area-inset-bottom));
+  }
+  .edit-toolbar {
+    bottom: calc(138px + env(safe-area-inset-bottom));
+  }
+  .world-footer {
+    bottom: max(8px, env(safe-area-inset-bottom));
+    left: 16px;
+    right: 16px;
+    line-height: 1.5;
+  }
+  .materials-dialog,
+  .import-dialog {
+    padding: 18px;
+  }
+  .material-option {
+    font-size: 13px;
+    min-height: 85px;
+  }
+}
+@media (pointer: coarse) {
+  .desktop-guide {
+    display: none;
+  }
+  .touch-guide {
+    display: block;
+  }
+  .touch-pad {
+    left: max(16px, env(safe-area-inset-left));
+    bottom: calc(180px + env(safe-area-inset-bottom));
+  }
+  .touch-actions {
+    right: max(16px, env(safe-area-inset-right));
+    bottom: calc(180px + env(safe-area-inset-bottom));
+  }
+}
+@media (max-height: 600px) {
+  .start-layer {
+    inset: 67px 0 58px;
+    padding: 14px 7vw;
+  }
+  .start-card {
+    margin-block: 0;
+  }
+  .edit-toolbar {
+    bottom: 118px;
+  }
+  .touch-pad,
+  .touch-actions {
+    bottom: 138px;
+  }
+  .touch-hint {
+    display: none;
+  }
+}
+@media (max-height: 600px) and (max-width: 600px) {
+  .edit-toolbar {
+    bottom: calc(138px + env(safe-area-inset-bottom));
+  }
+}
+@media (max-height: 450px) {
+  .edit-toolbar {
+    top: 76px;
+    right: 16px;
+    left: auto;
+    bottom: auto;
+    transform: none;
+  }
+  .touch-actions {
+    flex-direction: row;
+    gap: 5px;
+    bottom: 124px;
+  }
+  .touch-actions button {
+    width: 52px;
+    font-size: 13px !important;
+  }
+  .touch-pad {
+    bottom: 124px;
+  }
+}

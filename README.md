@@ -30,7 +30,7 @@ For development, run `npm run dev` and open the local address printed in the ter
 
 ## GitHub Pages
 
-The game is published at <https://xudafeng.github.io/my-minecraft-world/>. The workflow in [`.github/workflows/pages.yml`](.github/workflows/pages.yml) tests, builds, and deploys it whenever `main` is updated. In the repository's **Settings → Pages**, the publishing source is **GitHub Actions**.
+The game is published at <https://xudafeng.github.io/my-minecraft-world/>. The workflow in [`.github/workflows/pages.yml`](.github/workflows/pages.yml) tests and builds branches and pull requests. Only `main` deploys to the live site. In the repository's **Settings → Pages**, the publishing source is **GitHub Actions**.
 
 To build and preview the same static version locally:
 
@@ -50,11 +50,17 @@ Open the address printed in the terminal, including `/my-minecraft-world/`. This
 | Jump / Sprint               | Space / Shift                                                                       |
 | Mine / Place                | Short left click / Right click                                                      |
 | Select a block              | Number keys 1–6, scroll wheel, or click the hotbar                                  |
+| Materials / Pick material   | E / Q (or middle click while the mouse is locked)                                   |
+| Undo / Redo                 | Ctrl or Command + Z / Ctrl or Command + Shift + Z                                   |
 | Return to the cabin / Pause | R / Esc                                                                             |
 
-The world includes a cabin, a bridge, a river, trees, a wheat field, and two decorative sheep. It features gravity, collision detection, mining particles, and six selectable building blocks. You play in first person with a visible arm. The touch interface provides buttons for movement, jumping, mining, and placing blocks.
+The world includes a cabin, a bridge, a river, trees, a wheat field, and two decorative sheep. It features gravity, collision detection, mining particles, and six customizable hotbar slots and a palette of all 13 editable materials. You play in first person with a visible arm. The touch interface provides buttons for movement, jumping, mining, and placing blocks.
 
-This is a small creative-mode prototype: **refreshing the page resets the world**. Saving, multiplayer, and survival systems are not implemented. Bedrock cannot be mined, building is limited to the world bounds, and the sheep are decorative, without farming mechanics.
+This is a small creative-mode game. **Your world is saved automatically in this browser**, including block changes, position, view, and hotbar. Edits save immediately; movement saves periodically and when paused. Wait for **Saved in this browser** before closing. Storage is device- and browser-specific, may be unavailable or cleared by the browser, and does not sync between devices. Use **Export world** in the pause menu to keep a JSON backup, then **Import world** to restore it on another device. Importing asks before replacing the current world.
+
+Undo and redo cover the most recent 200 edits in the current session; reloading or importing starts a fresh undo history. A change that would place a solid block inside the player waits until the player moves away. Materials selected in the palette replace the currently selected hotbar slot. Bedrock stays protected.
+
+If browser storage is blocked or a saved file is unreadable, the game stays playable and offers export instead of overwriting the existing save. If another tab saves first, this tab stops automatic writes and asks you to export before reloading. Multiplayer and survival systems are not implemented. The sheep remain decorative, without farming mechanics.
 
 ## Blender project
 
@@ -72,7 +78,10 @@ vite.pages.config.ts    Static build and project subpath
 lib/voxel-world.ts       World generation, collisions, and raycasting
 lib/voxel-game.ts        Three.js rendering, player movement, and block interactions
 lib/i18n.ts              Translations and language preferences
-tests/                  Physics, interaction boundary, and language tests
+lib/world-session.ts    Edit history and validated world snapshots
+lib/world-storage.ts    Browser saves with concurrent-tab protection
+lib/touch-input.ts      Independent movement and look pointers
+tests/                  Physics, persistence, touch, and language tests
 blender/                Editable scene and Python generator
 docs/images/            Blender render preview
 ```
@@ -87,6 +96,6 @@ npx tsc --noEmit
 npm run build
 ```
 
-Tests cover the spawn point, doorway, gravity, jumping, wall and ceiling collisions, ray hits, placement boundaries, and language preference storage. Basic movement and block interactions have been checked in a local browser. Touch controls have not yet been tested on a physical phone.
+Tests cover physics, editable boundaries, undo/redo, snapshot validation, persistence transactions and conflicting tabs (using an IndexedDB test implementation), independent touch pointers, and language preferences. Basic movement and block interactions were checked in a local browser on the previous version. Browser interaction and physical-phone acceptance testing for this branch remain pending.
 
 This is an independent project inspired by Minecraft's block-based style. It is not affiliated with Mojang or Microsoft.
