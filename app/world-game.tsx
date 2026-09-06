@@ -8,6 +8,7 @@ import {
   Move,
   Sun,
   Box,
+  Star,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { HOTBAR } from '@/lib/voxel-world';
@@ -157,6 +158,19 @@ export default function Game() {
               </Button>
             )}
             <div className="start-note">{t.startNote}</div>
+            <a
+              className="github-link"
+              href="https://github.com/xudafeng/my-minecraft-world"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={t.githubStarLabel}
+            >
+              <Star size={20} aria-hidden="true" />
+              <span className="github-link-copy">
+                <strong>{t.githubStar}</strong>
+                <span>github.com/xudafeng/my-minecraft-world</span>
+              </span>
+            </a>
             {state.started && (
               <Button
                 variant="ghost"

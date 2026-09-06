@@ -49,7 +49,8 @@ button {
 button:disabled {
   cursor: wait;
 }
-button:focus-visible {
+button:focus-visible,
+.github-link:focus-visible {
   outline: 3px solid #ebffa2;
   outline-offset: 4px;
 }
@@ -235,6 +236,46 @@ kbd {
   color: #c9d6cb;
   margin-top: 22px;
   line-height: 1.8;
+}
+.github-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 340px;
+  margin-top: 22px;
+  padding: 12px 14px;
+  border: 1px solid #d9ed8d80;
+  border-radius: 6px;
+  background: #173b32b3;
+  color: #d9ed8d;
+  text-decoration: none;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+.github-link:hover {
+  background: #26463e;
+  border-color: #d9ed8d;
+}
+.github-link > svg {
+  flex-shrink: 0;
+}
+.github-link-copy {
+  min-width: 0;
+}
+.github-link-copy strong {
+  display: block;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.github-link-copy > span {
+  display: block;
+  margin-top: 3px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #cbd8cf;
+  overflow-wrap: anywhere;
 }
 .return-button {
   margin-top: 18px;
@@ -439,8 +480,9 @@ kbd {
 @media (max-width: 600px) {
   .start-layer {
     background: linear-gradient(90deg, #12302dec, #14383299);
-    padding: 26px;
-    align-items: center;
+    padding: 96px 26px 54px;
+    align-items: safe center;
+    overflow-y: auto;
   }
   .brand strong {
     font-size: 17px;
@@ -598,6 +640,7 @@ kbd {
   }
   .start-layer {
     padding: 65px 7vw 25px;
+    align-items: flex-start;
     overflow: auto;
   }
   .start-card {
@@ -623,6 +666,10 @@ kbd {
   }
   .start-note {
     margin-top: 12px;
+  }
+  .github-link {
+    margin-top: 14px;
+    padding: 10px 14px;
   }
   .world-footer {
     bottom: 10px;
