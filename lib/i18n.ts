@@ -55,6 +55,9 @@ const en = {
   startNote: 'Mouse to look · 1–6 to select blocks · Esc to pause',
   githubStar: 'Star on GitHub',
   githubStarLabel: 'Star my-minecraft-world on GitHub (opens in a new tab)',
+  creatorLabel:
+    'Created by xudafeng · View GitHub profile (opens in a new tab)',
+  creatorAvatar: "xudafeng's GitHub avatar",
   returnHome: 'Return to the cabin',
   dragActions: 'Drag to look · Click to mine · Right click to place',
   movementHint: 'WASD Move · Space Jump · Shift Sprint · R Home',
@@ -127,6 +130,8 @@ const zh: Dictionary = {
   startNote: '鼠标环顾四周 · 数字 1–6 选方块 · Esc 暂停',
   githubStar: '去 GitHub 点个 Star',
   githubStarLabel: '为 my-minecraft-world 点个 Star（在新标签页打开 GitHub）',
+  creatorLabel: '作者 xudafeng · 查看 GitHub 主页（在新标签页打开）',
+  creatorAvatar: 'xudafeng 的 GitHub 头像',
   returnHome: '回到小屋前',
   dragActions: '按住鼠标拖动视角 · 点击挖掘 · 右键放置',
   movementHint: 'WASD 移动 · 空格 跳跃 · Shift 快跑 · R 回家',

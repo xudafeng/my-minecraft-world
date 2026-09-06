@@ -11,6 +11,7 @@ import {
   Star,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { HOTBAR } from '@/lib/voxel-world';
 import {
   DEFAULT_LOCALE,
@@ -158,19 +159,39 @@ export default function Game() {
               </Button>
             )}
             <div className="start-note">{t.startNote}</div>
-            <a
-              className="github-link"
-              href="https://github.com/xudafeng/my-minecraft-world"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={t.githubStarLabel}
-            >
-              <Star size={20} aria-hidden="true" />
-              <span className="github-link-copy">
-                <strong>{t.githubStar}</strong>
-                <span>github.com/xudafeng/my-minecraft-world</span>
-              </span>
-            </a>
+            <div className="project-links">
+              <a
+                className="creator-link"
+                href="https://github.com/xudafeng"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={t.creatorLabel}
+                title={t.creatorLabel}
+              >
+                <Avatar className="creator-avatar">
+                  <AvatarImage
+                    src="https://avatars.githubusercontent.com/u/1011681?v=4&s=96"
+                    alt={t.creatorAvatar}
+                    width={48}
+                    height={48}
+                  />
+                  <AvatarFallback>X</AvatarFallback>
+                </Avatar>
+              </a>
+              <a
+                className="github-link"
+                href="https://github.com/xudafeng/my-minecraft-world"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={t.githubStarLabel}
+              >
+                <Star size={20} aria-hidden="true" />
+                <span className="github-link-copy">
+                  <strong>{t.githubStar}</strong>
+                  <span>github.com/xudafeng/my-minecraft-world</span>
+                </span>
+              </a>
+            </div>
             {state.started && (
               <Button
                 variant="ghost"

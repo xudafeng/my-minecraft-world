@@ -50,7 +50,8 @@ button:disabled {
   cursor: wait;
 }
 button:focus-visible,
-.github-link:focus-visible {
+.github-link:focus-visible,
+.creator-link:focus-visible {
   outline: 3px solid #ebffa2;
   outline-offset: 4px;
 }
@@ -237,13 +238,34 @@ kbd {
   margin-top: 22px;
   line-height: 1.8;
 }
-.github-link {
+.project-links {
   display: flex;
   align-items: center;
   gap: 12px;
   width: 100%;
-  max-width: 340px;
+  max-width: 400px;
   margin-top: 22px;
+}
+.creator-link {
+  display: inline-flex;
+  flex-shrink: 0;
+  border-radius: 50%;
+}
+.creator-avatar {
+  width: 48px;
+  height: 48px;
+  border: 2px solid #d9ed8d80;
+}
+.creator-link:hover .creator-avatar {
+  border-color: #d9ed8d;
+}
+.github-link {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  max-width: 340px;
   padding: 12px 14px;
   border: 1px solid #d9ed8d80;
   border-radius: 6px;
@@ -667,8 +689,10 @@ kbd {
   .start-note {
     margin-top: 12px;
   }
-  .github-link {
+  .project-links {
     margin-top: 14px;
+  }
+  .github-link {
     padding: 10px 14px;
   }
   .world-footer {
