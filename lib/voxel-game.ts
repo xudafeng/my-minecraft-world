@@ -1,10 +1,21 @@
 import type { GameMessage } from './i18n';
 import * as THREE from 'three';
+import { WorldSession, type WorldSnapshot } from './world-session';
+import {
+  saveBrowserWorld,
+  SaveConflict,
+  type SavedWorld,
+  type SaveStatus,
+} from './world-storage';
+import { TouchInput } from './touch-input';
 import {
   VoxelWorld,
   BLOCK,
   hash,
   HOTBAR,
+  BUILDABLE_BLOCKS,
+  withinBuildBounds,
+  isSolid,
   type Vec,
   type Hit,
   voxelRay,
@@ -21,6 +32,11 @@ export type GameState = {
   message: GameMessage | null;
   mode: string;
   coords: string;
+  hotbar: number[];
+  canUndo: boolean;
+  canRedo: boolean;
+  paletteOpen: boolean;
+  saveStatus: SaveStatus;
 };
 const faces = [
   {
@@ -81,7 +97,8 @@ const faces = [
 export class VoxelGame {
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(70, 1, 0.05, 130);
-  world = new VoxelWorld();
+  session = new WorldSession();
+  world = this.session.world;
   renderer: THREE.WebGLRenderer;
   meshes = new THREE.Group();
   decorations = new THREE.Group();
@@ -98,6 +115,11 @@ export class VoxelGame {
     message: null,
     mode: '',
     coords: '',
+    hotbar: [...HOTBAR],
+    canUndo: false,
+    canRedo: false,
+    paletteOpen: false,
+    saveStatus: 'ready',
   };
   pos: Vec = { x: -5.5, y: 2, z: 9.5 };
   yaw = 0.02;
@@ -124,6 +146,14 @@ export class VoxelGame {
   pointerX = 0;
   pointerY = 0;
   mobile = { x: 0, z: 0 };
+  touch = new TouchInput();
+  revision = 0;
+  saveAllowed = true;
+  saveInFlight = false;
+  saveAgain = false;
+  dirty = false;
+  changeVersion = 0;
+  nextSave = 0;
   jumpQueued = false;
   lastEmit = 0;
   lastAction = 0;
@@ -131,9 +161,20 @@ export class VoxelGame {
   messageUntil = 0;
   particles: { mesh: THREE.Mesh; v: THREE.Vector3; life: number }[] = [];
   locked = false;
-  constructor(host: HTMLElement, onChange: (s: GameState) => void) {
+  constructor(
+    host: HTMLElement,
+    onChange: (s: GameState) => void,
+    saved: SavedWorld = { revision: 0, snapshot: null, available: true },
+  ) {
     this.host = host;
     this.onChange = onChange;
+    this.revision = saved.revision;
+    this.saveAllowed = saved.available;
+    this.state.saveStatus = saved.available ? 'ready' : 'unavailable';
+    if (saved.snapshot) {
+      this.restore(saved.snapshot);
+      this.state.saveStatus = 'saved';
+    }
     this.renderer = new THREE.WebGLRenderer({
       antialias: true,
       powerPreference: 'high-performance',
@@ -177,7 +218,144 @@ export class VoxelGame {
     this.frame = requestAnimationFrame((t) => this.tick(t));
   }
   emit() {
-    this.onChange({ ...this.state });
+    this.state.canUndo = this.session.canUndo;
+    this.state.canRedo = this.session.canRedo;
+    if (!this.disposed)
+      this.onChange({ ...this.state, hotbar: [...this.state.hotbar] });
+  }
+  restore(value: unknown) {
+    const { session, snapshot } = WorldSession.restore(value);
+    this.session = session;
+    this.world = session.world;
+    this.pos = { ...snapshot.player.pos };
+    this.yaw = snapshot.player.yaw;
+    this.pitch = snapshot.player.pitch;
+    this.state.hotbar = [...snapshot.hotbar];
+    this.state.selected = snapshot.selected;
+    this.state.started = true;
+    this.velocity = 0;
+    this.grounded = false;
+    if (collides(this.world, this.pos)) this.respawn();
+    this.camera.position.set(this.pos.x, this.pos.y + 1.58, this.pos.z);
+    this.camera.rotation.set(this.pitch, this.yaw, 0, 'YXZ');
+  }
+  snapshot() {
+    return this.session.snapshot(
+      { pos: this.pos, yaw: this.yaw, pitch: this.pitch },
+      this.state.hotbar,
+      this.state.selected,
+    );
+  }
+  markDirty() {
+    this.dirty = true;
+    this.changeVersion++;
+    if (
+      this.saveAllowed &&
+      this.state.saveStatus !== 'saving' &&
+      this.state.saveStatus !== 'unavailable'
+    )
+      this.state.saveStatus = 'unsaved';
+  }
+  async save() {
+    if (!this.dirty || !this.saveAllowed) return;
+    if (this.saveInFlight) {
+      this.saveAgain = true;
+      return;
+    }
+    this.saveInFlight = true;
+    const version = this.changeVersion;
+    this.state.saveStatus = 'saving';
+    this.emit();
+    try {
+      this.revision = await saveBrowserWorld(this.snapshot(), this.revision);
+      this.dirty = this.changeVersion !== version;
+      this.state.saveStatus = this.dirty ? 'unsaved' : 'saved';
+    } catch (error) {
+      this.state.saveStatus =
+        error instanceof SaveConflict ? 'conflict' : 'unavailable';
+      // Another tab or unreadable save must not be silently overwritten.
+      if (error instanceof SaveConflict) this.saveAllowed = false;
+    } finally {
+      this.saveInFlight = false;
+      this.emit();
+      if (this.saveAgain) {
+        this.saveAgain = false;
+        void this.save();
+      }
+    }
+  }
+  importWorld(snapshot: unknown) {
+    const validated = WorldSession.restore(snapshot).snapshot;
+    this.pause();
+    this.restore(validated);
+    this.refreshDetails();
+    this.rebuild();
+    this.markDirty();
+    void this.save();
+    this.notify('imported');
+  }
+  openPalette() {
+    this.pause();
+    this.state.paletteOpen = true;
+    this.emit();
+  }
+  closePalette() {
+    this.state.paletteOpen = false;
+    this.emit();
+  }
+  chooseMaterial(block: number) {
+    if (!(BUILDABLE_BLOCKS as number[]).includes(block)) return;
+    this.state.hotbar[this.state.selected] = block;
+    this.markDirty();
+    void this.save();
+    this.emit();
+  }
+  pickMaterial() {
+    this.updateTarget();
+    if (this.hit && this.hit.block !== BLOCK.bedrock)
+      this.chooseMaterial(this.hit.block);
+  }
+  history(redo = false) {
+    const available = redo ? this.session.canRedo : this.session.canUndo;
+    const edit = redo
+      ? this.session.redo(this.pos)
+      : this.session.undo(this.pos);
+    if (!edit) {
+      if (available) this.notify('playerOverlap');
+      return;
+    }
+    this.afterEdit();
+    this.notify(redo ? 'redone' : 'undone');
+  }
+  afterEdit() {
+    this.swing = 1;
+    this.syncDetails();
+    this.rebuild();
+    this.updateTarget();
+    this.markDirty();
+    void this.save();
+    this.emit();
+  }
+  refreshDetails() {
+    this.decorations.traverse((o) => {
+      if (o instanceof THREE.Mesh) {
+        o.geometry.dispose();
+        (o.material as THREE.Material).dispose();
+      }
+    });
+    this.decorations.clear();
+    this.sheep = [];
+    this.addDetails();
+  }
+  syncDetails() {
+    for (const detail of this.decorations.children) {
+      const support = detail.userData.support as
+        | { x: number; y: number; z: number; block: number }
+        | undefined;
+      if (support)
+        detail.visible =
+          this.world.get(support.x, support.y, support.z) === support.block;
+    }
   }
   makeAtlas() {
     const canvas = document.createElement('canvas');
@@ -302,6 +480,7 @@ export class VoxelGame {
     return m;
   }
   addDetails() {
+    const original = new VoxelWorld();
     for (let x = 0; x <= 6; x += 2)
       for (const z of [1.92, 4.08])
         this.cube(
@@ -333,8 +512,8 @@ export class VoxelGame {
       const x = hash(i, 2, 0) * 34 - 17,
         z = hash(i, 3, 0) * 32 - 16;
       if ((x < 0 && z < 9 && z > -10) || Math.abs(x - 3) < 3) continue;
-      const y = this.world.top(x, z);
-      if (y > 5 || this.world.get(x, y - 1, z) !== BLOCK.grass) continue;
+      const y = original.top(x, z);
+      if (y > 5 || original.get(x, y - 1, z) !== BLOCK.grass) continue;
       this.cube(
         this.decorations,
         0x557d3a,
@@ -376,8 +555,26 @@ export class VoxelGame {
       );
       this.decorations.add(g);
     }
-    this.cube(this.arm, 0xc99769, [0.48, -0.48, -0.65], [0.22, 0.55, 0.25]);
-    this.cube(this.arm, 0x335b51, [0.48, -0.28, -0.63], [0.235, 0.27, 0.27]);
+    for (const detail of this.decorations.children) {
+      if (!(detail instanceof THREE.Mesh)) continue;
+      const x = Math.floor(detail.position.x);
+      const rail =
+        detail.position.x >= 0 &&
+        detail.position.x <= 7 &&
+        (detail.position.z === 1.92 || detail.position.z === 4.08);
+      const z = rail
+        ? detail.position.z < 3
+          ? 2
+          : 3
+        : Math.floor(detail.position.z);
+      const y = rail ? 2 : original.top(x, z) - 1;
+      detail.userData.support = { x, y, z, block: original.get(x, y, z) };
+    }
+    this.syncDetails();
+    if (!this.arm.children.length) {
+      this.cube(this.arm, 0xc99769, [0.48, -0.48, -0.65], [0.22, 0.55, 0.25]);
+      this.cube(this.arm, 0x335b51, [0.48, -0.28, -0.63], [0.235, 0.27, 0.27]);
+    }
     this.arm.rotation.x = -0.3;
     this.arm.visible = false;
     this.camera.add(this.arm);
@@ -409,6 +606,31 @@ export class VoxelGame {
       }
       if (!this.state.playing) return;
       if (
+        e.target instanceof Element &&
+        e.target.closest(
+          'button, input, textarea, select, [contenteditable="true"]',
+        )
+      )
+        return;
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        (e.code === 'KeyZ' || e.code === 'KeyY')
+      ) {
+        e.preventDefault();
+        if (!e.repeat) this.history(e.code === 'KeyY' || e.shiftKey);
+        return;
+      }
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.code === 'KeyE' && !e.repeat) {
+        e.preventDefault();
+        this.openPalette();
+        return;
+      }
+      if (e.code === 'KeyQ' && !e.repeat) {
+        this.pickMaterial();
+        return;
+      }
+      if (
         ['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(
           e.code,
         )
@@ -431,6 +653,11 @@ export class VoxelGame {
       if (document.hidden) this.pause();
     };
     document.addEventListener('visibilitychange', visibility);
+    const pageHide = () => {
+      void this.save();
+    };
+    window.addEventListener('pagehide', pageHide);
+    this.cleanup.push(() => window.removeEventListener('pagehide', pageHide));
     this.cleanup.push(() =>
       document.removeEventListener('visibilitychange', visibility),
     );
@@ -459,6 +686,7 @@ export class VoxelGame {
       if (!this.state.playing) return;
       canvas.focus();
       if (e.pointerType === 'touch') {
+        if (!this.touch.beginLook(e.pointerId, e.clientX, e.clientY)) return;
         this.dragging = true;
         this.pointerX = e.clientX;
         this.pointerY = e.clientY;
@@ -468,8 +696,13 @@ export class VoxelGame {
       if (this.locked) {
         if (e.button === 0) this.action();
         if (e.button === 2) this.action(true);
+        if (e.button === 1) {
+          e.preventDefault();
+          this.pickMaterial();
+        }
       } else if (e.button === 2) this.action(true);
       else if (e.button === 0) {
+        if (!this.touch.beginLook(e.pointerId, e.clientX, e.clientY)) return;
         this.dragging = true;
         this.pointerMoved = 0;
         this.pointerX = e.clientX;
@@ -482,8 +715,10 @@ export class VoxelGame {
       if (this.locked) {
         this.touchLook(e.movementX, e.movementY);
       } else if (this.dragging) {
-        const dx = e.clientX - this.pointerX,
-          dy = e.clientY - this.pointerY;
+        const delta = this.touch.lookDelta(e.pointerId, e.clientX, e.clientY);
+        if (!delta) return;
+        const dx = delta.x,
+          dy = delta.y;
         this.pointerMoved += Math.abs(dx) + Math.abs(dy);
         this.touchLook(dx, dy);
         this.pointerX = e.clientX;
@@ -491,6 +726,7 @@ export class VoxelGame {
       }
     });
     on(canvas, 'pointerup', (e) => {
+      if (!this.touch.endLook(e.pointerId)) return;
       if (
         this.state.playing &&
         !this.locked &&
@@ -501,8 +737,11 @@ export class VoxelGame {
         this.action();
       this.dragging = false;
     });
-    on(canvas, 'pointercancel', () => {
-      this.dragging = false;
+    on(canvas, 'pointercancel', (e) => {
+      if (this.touch.endLook(e.pointerId)) this.dragging = false;
+    });
+    on(canvas, 'lostpointercapture', (e) => {
+      if (this.touch.endLook(e.pointerId)) this.dragging = false;
     });
     on(
       canvas,
@@ -516,11 +755,14 @@ export class VoxelGame {
     );
   }
   start() {
+    this.state.paletteOpen = false;
     this.state.started = true;
     this.state.playing = true;
     this.state.mode = matchMedia('(pointer:coarse)').matches ? 'touch' : 'drag';
     this.lastTime = 0;
     this.keys.clear();
+    this.touch.clear();
+    this.markDirty();
     this.emit();
     const canvas = this.renderer.domElement;
     canvas.focus();
@@ -543,15 +785,18 @@ export class VoxelGame {
     this.state.playing = false;
     this.keys.clear();
     this.mobile = { x: 0, z: 0 };
+    this.touch.clear();
     this.dragging = false;
     this.jumpQueued = false;
     this.arm.visible = false;
     if (document.pointerLockElement === this.renderer.domElement)
       document.exitPointerLock();
     this.emit();
+    void this.save();
   }
   select(index: number) {
     this.state.selected = (index + HOTBAR.length) % HOTBAR.length;
+    this.markDirty();
     this.emit();
   }
   notify(message: GameMessage) {
@@ -574,11 +819,14 @@ export class VoxelGame {
       const nx = x + hit.normal.x,
         ny = y + hit.normal.y,
         nz = z + hit.normal.z;
-      if (Math.abs(nx) >= 30 || Math.abs(nz) >= 30 || ny > 24) {
+      if (!withinBuildBounds(nx, ny, nz)) {
         this.notify('worldEdge');
         return;
       }
-      if (overlapsPlayer(this.pos, nx, ny, nz)) {
+      if (
+        isSolid(this.state.hotbar[this.state.selected]) &&
+        overlapsPlayer(this.pos, nx, ny, nz)
+      ) {
         this.notify('playerOverlap');
         return;
       }
@@ -587,31 +835,25 @@ export class VoxelGame {
         this.world.get(nx, ny, nz) !== BLOCK.water
       )
         return;
-      this.world.set(nx, ny, nz, HOTBAR[this.state.selected]);
+      const edit = this.session.edit(
+        nx,
+        ny,
+        nz,
+        this.state.hotbar[this.state.selected],
+        this.pos,
+      );
+      if (edit) this.afterEdit();
     } else {
       if (hit.block === BLOCK.bedrock) {
         this.notify('bedrock');
         return;
       }
-      this.world.set(x, y, z, 0);
-      this.burst(x + 0.5, y + 0.5, z + 0.5, hit.block);
-      for (const detail of [...this.decorations.children])
-        if (
-          detail instanceof THREE.Mesh &&
-          Math.floor(detail.position.x) === x &&
-          Math.floor(detail.position.z) === z &&
-          detail.position.y > y &&
-          detail.position.y < y + 2
-        ) {
-          this.decorations.remove(detail);
-          detail.geometry.dispose();
-          if (detail.material instanceof THREE.Material)
-            detail.material.dispose();
-        }
+      const edit = this.session.edit(x, y, z, 0, this.pos);
+      if (edit) {
+        this.burst(x + 0.5, y + 0.5, z + 0.5, hit.block);
+        this.afterEdit();
+      }
     }
-    this.swing = 1;
-    this.rebuild();
-    this.updateTarget();
   }
   burst(x: number, y: number, z: number, b: number) {
     const palette: Record<number, number> = {
@@ -647,13 +889,18 @@ export class VoxelGame {
     this.velocity = 0;
     this.grounded = false;
     this.jumpQueued = false;
+    this.markDirty();
   }
-  touchMove(x: number, z: number) {
-    this.mobile = { x, z };
+  touchMove(id: number, x: number, z: number) {
+    this.touch.move(id, x, z);
+  }
+  touchRelease(id: number) {
+    this.touch.releaseMove(id);
   }
   touchLook(x: number, y: number) {
     this.yaw -= x * 0.0025;
     this.pitch = THREE.MathUtils.clamp(this.pitch - y * 0.0025, -1.48, 1.48);
+    if (x || y) this.markDirty();
   }
   jump() {
     this.jumpQueued = true;
@@ -661,7 +908,7 @@ export class VoxelGame {
   updateTarget() {
     const direction = new THREE.Vector3();
     this.camera.getWorldDirection(direction);
-    this.hit = voxelRay(this.world, this.camera.position, direction);
+    this.hit = voxelRay(this.world, this.camera.position, direction, 6, true);
     this.selection.visible = this.state.playing && !!this.hit;
     if (this.hit)
       this.selection.position.set(
@@ -679,6 +926,8 @@ export class VoxelGame {
     this.lastTime = time;
     this.clock += dt;
     if (this.state.playing) {
+      this.mobile = this.touch.direction();
+      const before = { ...this.pos };
       let forward =
         Number(this.keys.has('KeyW') || this.keys.has('ArrowUp')) -
         Number(this.keys.has('KeyS') || this.keys.has('ArrowDown')) +
@@ -708,6 +957,12 @@ export class VoxelGame {
       );
       this.velocity = body.velocity;
       this.grounded = body.grounded;
+      if (
+        Math.abs(before.x - this.pos.x) > 1e-6 ||
+        Math.abs(before.y - this.pos.y) > 1e-6 ||
+        Math.abs(before.z - this.pos.z) > 1e-6
+      )
+        this.markDirty();
       this.jumpQueued = false;
       if (
         this.pos.y < -9 ||
@@ -727,6 +982,10 @@ export class VoxelGame {
         0.012 *
         Math.sin(this.clock * 12);
       this.updateTarget();
+      if (time > this.nextSave) {
+        this.nextSave = time + 2000;
+        void this.save();
+      }
     } else if (!this.state.started) {
       this.camera.position.set(19 + Math.sin(this.clock * 0.04) * 2, 15, 22);
       this.camera.lookAt(-3, 3, -2);
@@ -769,6 +1028,7 @@ export class VoxelGame {
     this.frame = requestAnimationFrame((t) => this.tick(t));
   }
   dispose() {
+    void this.save();
     this.disposed = true;
     cancelAnimationFrame(this.frame);
     this.resizeObserver.disconnect();

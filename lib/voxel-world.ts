@@ -15,6 +15,24 @@ export const BLOCK = {
   path: 14,
 } as const;
 export const HOTBAR = [1, 3, 4, 5, 7, 6];
+export const BUILDABLE_BLOCKS = Object.values(BLOCK).filter(
+  (b) => b !== BLOCK.bedrock,
+);
+export const WORLD_MIN = -30,
+  WORLD_MAX = 29,
+  BUILD_MIN_Y = -3,
+  BUILD_MAX_Y = 24;
+export function withinBuildBounds(x: number, y: number, z: number) {
+  return (
+    [x, y, z].every(Number.isInteger) &&
+    x >= WORLD_MIN &&
+    x <= WORLD_MAX &&
+    z >= WORLD_MIN &&
+    z <= WORLD_MAX &&
+    y >= BUILD_MIN_Y &&
+    y <= BUILD_MAX_Y
+  );
+}
 export type Vec = { x: number; y: number; z: number };
 export const key = (x: number, y: number, z: number) => [x, y, z].join(',');
 export const isSolid = (b: number) => b !== 0 && b !== BLOCK.water;
@@ -38,7 +56,8 @@ export class VoxelWorld {
     else this.blocks.delete(key(x, y, z));
   }
   top(x: number, z: number) {
-    for (let y = 22; y >= -5; y--) if (isSolid(this.get(x, y, z))) return y + 1;
+    for (let y = BUILD_MAX_Y; y >= -4; y--)
+      if (isSolid(this.get(x, y, z))) return y + 1;
     return -5;
   }
   ground(x: number, z: number) {
@@ -209,6 +228,7 @@ export function voxelRay(
   origin: Vec,
   dir: Vec,
   max = 6,
+  includeWater = false,
 ): Hit | null {
   if (Math.abs(dir.x) + Math.abs(dir.y) + Math.abs(dir.z) < 1e-9) return null;
   let x = Math.floor(origin.x),
@@ -230,7 +250,8 @@ export function voxelRay(
   let normal = { x: 0, y: 0, z: 0 };
   while (distance <= max) {
     const block = world.get(x, y, z);
-    if (isSolid(block)) return { x, y, z, block, normal, distance };
+    if (isSolid(block) || (includeWater && block === BLOCK.water))
+      return { x, y, z, block, normal, distance };
     if (tx <= ty && tx <= tz) {
       x += sx;
       distance = tx;
