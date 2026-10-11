@@ -110,3 +110,11 @@ Find eight spinning golden relics across the pumpkin patch, bridge, forest, moun
 
 Pausing stops the timer. Adventure progress is included in autosaves and JSON exports; older saves remain compatible. This is a casual personal challenge, not a competitive or tamper-proof leaderboard.
 
+
+## Creepers and survival
+
+Five creepers patrol the wilds. They chase visible players and hop over low obstacles. At close range they flash during a 1.6-second fuse. Escape or break line of sight with a solid wall to defuse. Aim and left-click (touch: Punch / Mine) to knock them back; three punches defeat one.
+
+Explosions destroy nearby editable blocks but preserve bedrock. Walls block immediate damage but may themselves be destroyed. At zero health you respawn at home with full health and keep your relics. The four-block radius in front of home is safe; R also returns home and heals. Defeated or exploded creepers return after 30 seconds of active play. Pausing freezes enemies and fuses. Health is saved; enemy positions reset on reload or import.
+
+This is forgiving survival: death keeps your world and treasure progress. Explosion edits enter the existing undo history, which retains the latest 200 block edits.

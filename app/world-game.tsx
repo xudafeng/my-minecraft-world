@@ -203,8 +203,8 @@ export default function Game() {
             )}
             <div className="adventure-intro">
               {locale === 'zh-CN'
-                ? '寻找 8 枚发光遗物。3 枚解锁疾跑，5 枚解锁二段跳。屋顶上的那枚？搭楼梯试试。'
-                : 'Find 8 glowing relics. Collect 3 for speed boots, 5 for double jump. The rooftop relic? Build your way up.'}
+                ? '躲开苦力怕，寻找 8 枚发光遗物。左键攻击，闪白时快跑。3 枚解锁疾跑，5 枚解锁二段跳。屋顶上的那枚？搭楼梯试试。'
+                : 'Dodge creepers and find 8 glowing relics. Left click to punch; run when they flash. Collect 3 for speed boots, 5 for double jump. The rooftop relic? Build your way up.'}
             </div>
             {state.adventure?.collected.length === RELICS.length && (
               <Button onClick={() => game.current?.restartAdventure()}>
@@ -429,7 +429,9 @@ export default function Game() {
           </div>
           <div className="touch-actions">
             <Button onClick={() => game.current?.jump()}>{t.jump}</Button>
-            <Button onClick={() => game.current?.action()}>{t.mine}</Button>
+            <Button onClick={() => game.current?.action()}>
+              {locale === 'zh-CN' ? '攻击 / 挖掘' : 'Punch / Mine'}
+            </Button>
             <Button onClick={() => game.current?.action(true)}>
               {t.place}
             </Button>

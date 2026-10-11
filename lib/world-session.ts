@@ -20,6 +20,7 @@ export type Edit = {
 };
 export type WorldSnapshot = {
   adventure?: AdventureSave;
+  health?: number;
   version: 1;
   worldVersion: 1;
   edits: [number, number, number, number][];
@@ -40,6 +41,11 @@ export function parseSnapshot(value: unknown): WorldSnapshot {
     v.edits.length > 100800
   )
     throw new Error('Unsupported world');
+  if (
+    v.health !== undefined &&
+    (!Number.isFinite(v.health) || v.health < 0 || v.health > 100)
+  )
+    throw new Error('Invalid health');
   const occupied = new Set<string>();
   const edits: WorldSnapshot['edits'] = v.edits.map((e) => {
     if (
@@ -79,6 +85,7 @@ export function parseSnapshot(value: unknown): WorldSnapshot {
     version: 1,
     worldVersion: 1,
     edits,
+    ...(v.health === undefined ? {} : { health: v.health }),
     ...(v.adventure === undefined
       ? {}
       : { adventure: parseAdventure(v.adventure) }),

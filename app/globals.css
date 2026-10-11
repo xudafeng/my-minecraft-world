@@ -1005,3 +1005,58 @@ kbd {
     gap: 9px;
   }
 }
+
+.survival-hud {
+  position: absolute;
+  top: 100px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 260px;
+  padding: 14px;
+  border-radius: 14px;
+  background: #17271ee6;
+  color: #ffe8db;
+  pointer-events: none;
+}
+.survival-hud strong {
+  color: #ff8e83;
+  font-size: 20px;
+}
+.survival-hud span {
+  font-size: 12px;
+}
+.survival-hud.danger {
+  background: #a62b22ee;
+  animation: danger-pulse 0.35s infinite alternate;
+}
+.combat-notice {
+  position: absolute;
+  top: 42%;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #fff3ce;
+  background: #263826db;
+  padding: 12px 22px;
+  border-radius: 12px;
+  pointer-events: none;
+  text-align: center;
+}
+@keyframes danger-pulse {
+  to {
+    box-shadow: 0 0 25px #ff4533;
+  }
+}
+@media (max-width: 700px) {
+  .survival-hud {
+    top: 235px;
+    left: 12px;
+    right: auto;
+    padding: 8px;
+    max-width: 220px;
+  }
+  .survival-hud strong {
+    font-size: 15px;
+  }
+}

@@ -1,3 +1,11 @@
+import {
+  createCreeper,
+  stepCreeper,
+  seesPlayer,
+  blastDamage,
+  CREEPER_SPAWNS,
+  type Creeper,
+} from './creepers';
 import { Adventure, RELICS, type AdventureSave } from './adventure';
 import type { GameMessage } from './i18n';
 import * as THREE from 'three';
@@ -26,6 +34,9 @@ import {
 } from './voxel-world';
 export type GameState = {
   adventure?: AdventureSave;
+  health?: number;
+  danger?: boolean;
+  combatNotice?: 'hit' | 'hurt' | 'defeated' | 'respawn' | null;
   ready: boolean;
   playing: boolean;
   started: boolean;
@@ -142,6 +153,9 @@ export class VoxelGame {
   adventure = new Adventure();
   relics = new THREE.Group();
   airJumpUsed = false;
+  health = 100;
+  mobs: { body: Creeper; mesh: THREE.Group }[] = [];
+  combatUntil = 0;
   cleanup: (() => void)[] = [];
   onChange: (s: GameState) => void;
   host: HTMLElement;
@@ -211,6 +225,7 @@ export class VoxelGame {
     });
     this.scene.add(this.meshes, this.decorations, this.selection, this.relics);
     this.createRelics();
+    this.createCreepers();
     this.selection.visible = false;
     this.scene.add(this.camera);
     this.rebuild();
@@ -224,6 +239,10 @@ export class VoxelGame {
     this.frame = requestAnimationFrame((t) => this.tick(t));
   }
   emit() {
+    this.state.health = this.health;
+    this.state.danger = this.mobs.some(
+      (m) => m.body.cooldown === 0 && m.body.fuse > 0,
+    );
     this.state.adventure = {
       ...this.adventure.data,
       collected: [...this.adventure.data.collected],
@@ -235,6 +254,9 @@ export class VoxelGame {
   }
   restore(value: unknown) {
     const { session, snapshot } = WorldSession.restore(value);
+    this.health =
+      snapshot.health && snapshot.health > 0 ? snapshot.health : 100;
+    this.airJumpUsed = false;
     this.adventure = new Adventure(snapshot.adventure);
     this.session = session;
     this.world = session.world;
@@ -257,6 +279,7 @@ export class VoxelGame {
         this.state.hotbar,
         this.state.selected,
       ),
+      health: this.health,
       adventure: {
         ...this.adventure.data,
         collected: [...this.adventure.data.collected],
@@ -305,6 +328,7 @@ export class VoxelGame {
     const validated = WorldSession.restore(snapshot).snapshot;
     this.pause();
     this.restore(validated);
+    this.resetCreepers();
     this.refreshDetails();
     this.rebuild();
     this.markDirty();
@@ -826,6 +850,7 @@ export class VoxelGame {
       return;
     this.lastAction = performance.now();
     this.updateTarget();
+    if (!place && this.punchCreeper()) return;
     const hit = this.hit;
     if (!hit) {
       this.notify('outOfReach');
@@ -899,6 +924,8 @@ export class VoxelGame {
     }
   }
   respawn() {
+    this.health = 100;
+    this.airJumpUsed = false;
     this.pos = { x: -5.5, y: 2, z: 9.5 };
     while (collides(this.world, this.pos) && this.pos.y < 28) this.pos.y += 1;
     this.yaw = 0.02;
@@ -933,6 +960,137 @@ export class VoxelGame {
     this.markDirty();
     this.emit();
     void this.save();
+  }
+  combatNotice(notice: NonNullable<GameState['combatNotice']>) {
+    this.state.combatNotice = notice;
+    this.combatUntil = performance.now() + 2400;
+    this.emit();
+  }
+  createCreepers() {
+    CREEPER_SPAWNS.forEach(([x, z]) => {
+      const mesh = new THREE.Group();
+      this.cube(mesh, 0x58a63c, [0, 1.05, 0], [0.55, 0.9, 0.38]);
+      this.cube(mesh, 0x70b34d, [0, 1.72, 0], [0.7, 0.65, 0.6]);
+      for (const a of [-0.22, 0.22])
+        for (const b of [-0.22, 0.22])
+          this.cube(mesh, 0x43872f, [a, 0.25, b], [0.24, 0.5, 0.3]);
+      for (const a of [-0.17, 0.17])
+        this.cube(mesh, 0x162a16, [a, 1.8, -0.305], [0.14, 0.15, 0.025]);
+      this.cube(mesh, 0x162a16, [0, 1.58, -0.305], [0.12, 0.22, 0.025]);
+      for (const a of [-0.1, 0.1])
+        this.cube(mesh, 0x162a16, [a, 1.52, -0.305], [0.1, 0.14, 0.025]);
+      this.scene.add(mesh);
+      const body = createCreeper(this.world, x, z);
+      mesh.position.set(body.pos.x, body.pos.y, body.pos.z);
+      this.mobs.push({ body, mesh });
+    });
+  }
+  resetCreepers() {
+    this.mobs.forEach((m, i) => {
+      m.body = createCreeper(
+        this.world,
+        ...(CREEPER_SPAWNS[i] as [number, number]),
+      );
+    });
+  }
+  punchCreeper() {
+    const direction = new THREE.Vector3();
+    this.camera.getWorldDirection(direction);
+    const candidates = this.mobs
+      .filter((m) => m.body.cooldown === 0)
+      .map((m) => {
+        const delta = new THREE.Vector3(
+          m.body.pos.x,
+          m.body.pos.y + 1.2,
+          m.body.pos.z,
+        ).sub(this.camera.position);
+        return {
+          m,
+          distance: delta.length(),
+          aim: delta.normalize().dot(direction),
+        };
+      })
+      .sort((a, b) => a.distance - b.distance);
+    const target = candidates.find(
+      (c) =>
+        c.distance < 3.2 &&
+        c.aim > 0.91 &&
+        seesPlayer(this.world, c.m.body, this.pos),
+    );
+    if (!target) return false;
+    const m = target.m;
+    m.body.health--;
+    m.body.fuse = 0;
+    const dx = m.body.pos.x - this.pos.x,
+      dz = m.body.pos.z - this.pos.z;
+    const len = Math.max(0.01, Math.hypot(dx, dz));
+    stepBody(this.world, m.body, (dx / len) * 18, (dz / len) * 18, false, 0.1);
+    this.swing = 1;
+    this.burst(m.body.pos.x, m.body.pos.y + 1, m.body.pos.z, BLOCK.leaf);
+    if (m.body.health <= 0) m.body.cooldown = 30;
+    this.combatNotice(m.body.health <= 0 ? 'defeated' : 'hit');
+    return true;
+  }
+  updateCreepers(dt: number) {
+    for (const m of this.mobs) {
+      if (this.state.playing && stepCreeper(this.world, m.body, this.pos, dt)) {
+        const p = m.body.pos;
+        const distance = Math.hypot(
+          this.pos.x - p.x,
+          this.pos.y - p.y,
+          this.pos.z - p.z,
+        );
+        const damage = blastDamage(
+          distance,
+          !seesPlayer(this.world, m.body, this.pos),
+        );
+        this.health = Math.max(0, this.health - damage);
+        for (let x = Math.floor(p.x) - 2; x <= Math.floor(p.x) + 2; x++)
+          for (let y = Math.floor(p.y) - 1; y <= Math.floor(p.y) + 2; y++)
+            for (let z = Math.floor(p.z) - 2; z <= Math.floor(p.z) + 2; z++)
+              if (
+                Math.hypot(x + 0.5 - p.x, y + 0.5 - p.y, z + 0.5 - p.z) <= 2.4
+              )
+                this.session.edit(x, y, z, 0, this.pos);
+        for (let i = 0; i < 3; i++)
+          this.burst(p.x, p.y + 0.7, p.z, BLOCK.stone);
+        this.afterEdit();
+        if (this.health === 0) {
+          this.respawn();
+          this.combatNotice('respawn');
+        } else if (damage) {
+          const dx = this.pos.x - p.x,
+            dz = this.pos.z - p.z;
+          const len = Math.max(0.01, Math.hypot(dx, dz));
+          const body = stepBody(
+            this.world,
+            { pos: this.pos, velocity: 5, grounded: false },
+            (dx / len) * 12,
+            (dz / len) * 12,
+            false,
+            0.12,
+          );
+          this.velocity = body.velocity;
+          this.markDirty();
+          this.combatNotice('hurt');
+        }
+      }
+      m.mesh.visible = m.body.cooldown === 0;
+      m.mesh.position.set(m.body.pos.x, m.body.pos.y, m.body.pos.z);
+      if (this.state.playing)
+        m.mesh.rotation.y =
+          Math.atan2(this.pos.x - m.body.pos.x, this.pos.z - m.body.pos.z) +
+          Math.PI;
+      const flash = m.body.fuse > 0 && Math.sin(m.body.fuse * 25) > 0;
+      m.mesh.traverse((o) => {
+        if (o instanceof THREE.Mesh)
+          (o.material as THREE.MeshLambertMaterial).emissive.setHex(
+            flash ? 0xb0b0b0 : 0,
+          );
+      });
+      m.mesh.scale.setScalar(1 + m.body.fuse * 0.08);
+    }
+    if (performance.now() > this.combatUntil) this.state.combatNotice = null;
   }
   createRelics() {
     RELICS.forEach((r, id) => {
@@ -1085,6 +1243,7 @@ export class VoxelGame {
       this.camera.lookAt(-3, 3, -2);
       this.selection.visible = false;
     }
+    this.updateCreepers(dt);
     this.updateAdventure(dt);
     this.sheep.forEach((s, i) => {
       const x = (i ? 9 : 7) + Math.sin(this.clock * 0.2 + i) * 0.7,
