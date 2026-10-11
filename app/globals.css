@@ -1060,3 +1060,341 @@ kbd {
     font-size: 15px;
   }
 }
+
+.camp-panel {
+  margin: 22px 0 16px;
+  padding: 18px;
+  color: #e7eee3;
+  text-align: left;
+  text-shadow: none;
+  border: 1px solid #c2d8b426;
+  border-radius: 18px;
+  background: linear-gradient(145deg, #213b32f5, #142a24fa);
+  box-shadow:
+    0 16px 36px #071b2440,
+    inset 0 1px 0 #ffffff08;
+}
+.camp-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.camp-title > strong {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: #f4ecd6;
+}
+.camp-title > strong svg {
+  color: #e7c581;
+  flex-shrink: 0;
+}
+.camp-title > button {
+  height: auto;
+  padding: 6px 9px;
+  border: 1px solid #aac6ae33;
+  border-radius: 8px;
+  background: #ffffff05;
+  color: #b7cabb;
+  font-size: 11px;
+  white-space: normal;
+}
+.camp-title > button:hover {
+  background: #ffffff0d;
+  color: #eff4e9;
+}
+.start-card .camp-panel p {
+  margin: 8px 0 12px;
+  color: #b1c3b5;
+  font-size: 12px;
+  line-height: 1.65;
+}
+.camp-panel > small {
+  display: block;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #b8d0ad1c;
+  color: #a5b8a9;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.camp-panel > output {
+  display: block;
+  color: #dfcd93;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+.resource-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 12px 0 16px;
+}
+.resource-list > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  background: #0c201955;
+  color: #c2d1c5;
+  border: 1px solid #b4ccac20;
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+.resource-list b {
+  color: #f3ead6;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.resource-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  box-shadow: inset 0 0 0 1px #ffffff20;
+}
+.recipe-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.recipe-list .recipe-card {
+  height: auto;
+  min-height: 96px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 9px;
+  padding: 12px 10px;
+  white-space: normal;
+  text-align: left;
+  border: 1px solid #dac48c55;
+  border-radius: 12px;
+  background: #315044;
+  color: #f4eddc;
+  box-shadow: inset 0 1px 0 #ffffff08;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    transform 0.15s;
+}
+.recipe-list .recipe-card:hover:not(:disabled) {
+  background: #3a5c4d;
+  border-color: #e7cb80;
+  transform: translateY(-1px);
+}
+.recipe-list .recipe-card:focus-visible {
+  outline: 2px solid #ecd08b;
+  outline-offset: 3px;
+}
+.recipe-icon {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 29px;
+  height: 29px;
+  border-radius: 8px;
+  background: #e9c58212;
+  color: #e5cb92;
+}
+.recipe-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+.recipe-list strong {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+.recipe-list small {
+  font-size: 10px;
+  color: #bbcec0;
+  line-height: 1.5;
+}
+.recipe-status {
+  color: #e3cb8e;
+  font-size: 10px;
+  font-weight: 500;
+}
+.recipe-list .recipe-card:disabled {
+  opacity: 1;
+  background: #142a2455;
+  border-color: #b0c6a81c;
+  color: #a4b8a9;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+.recipe-list .recipe-card:disabled .recipe-icon {
+  color: #a0b5a4;
+  background: #b0c6a80a;
+}
+.recipe-list .recipe-card:disabled small,
+.recipe-list .recipe-card:disabled .recipe-status {
+  color: #94aa9b;
+}
+@media (max-width: 480px) {
+  .camp-panel {
+    padding: 14px;
+  }
+  .camp-title {
+    align-items: flex-start;
+  }
+  .camp-title > strong {
+    font-size: 15px;
+  }
+  .recipe-list {
+    grid-template-columns: 1fr;
+  }
+  .recipe-list .recipe-card {
+    min-height: 76px;
+    padding: 12px;
+  }
+}
+
+.activity-notice {
+  position: absolute;
+  top: 32%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #142921e8;
+  color: #ffe7a0;
+  padding: 12px 20px;
+  border-radius: 12px;
+  text-align: center;
+  pointer-events: none;
+}
+
+@media (max-height: 500px) and (min-width: 701px) {
+  .adventure-hud {
+    top: 76px;
+    width: 240px;
+    padding: 10px;
+  }
+  .adventure-hud small {
+    display: none;
+  }
+  .survival-hud {
+    top: 130px;
+    right: 16px;
+    padding: 8px;
+    max-width: 220px;
+  }
+  .survival-hud small {
+    display: none;
+  }
+  .activity-notice {
+    top: 26%;
+    font-size: 12px;
+  }
+}
+
+/* One native scroll surface; scenery stays unobscured outside the menu. */
+.start-layer {
+  display: block;
+  inset: auto;
+  top: 92px;
+  left: 32px;
+  right: auto;
+  bottom: auto;
+  width: min(460px, calc(100% - 64px));
+  max-height: calc(100dvh - 152px);
+  padding: 24px;
+  border: 1px solid #e3edcb20;
+  border-radius: 22px;
+  background: #132e27c9;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 18px 50px #081c2433;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: #afc3a055 transparent;
+  scroll-padding-block: 24px;
+}
+.start-layer .start-card {
+  width: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  overflow: visible;
+}
+.start-layer .adventure-intro {
+  color: #cad4be;
+  font-size: 12px;
+  line-height: 1.65;
+}
+.camp-disclosure {
+  margin: 18px 0 14px;
+  border: 1px solid #bcd1a82b;
+  border-radius: 14px;
+  background: #0b21172b;
+}
+.camp-disclosure > summary {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 13px 14px;
+  list-style: none;
+  cursor: pointer;
+  color: #e3dbc0;
+  font-size: 13px;
+  user-select: none;
+}
+.camp-disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+.camp-disclosure > summary::after {
+  content: '⌄';
+  margin-left: auto;
+  color: #baccad;
+  transition: transform 0.15s;
+}
+.camp-disclosure[open] > summary::after {
+  transform: rotate(180deg);
+}
+.camp-disclosure > summary:focus-visible {
+  outline: 2px solid #e6cc91;
+  outline-offset: 3px;
+  border-radius: 12px;
+}
+.camp-disclosure .camp-panel {
+  margin: 0;
+  border: 0;
+  border-top: 1px solid #bcd1a81c;
+  border-radius: 0 0 14px 14px;
+  box-shadow: none;
+}
+@media (max-width: 600px) {
+  .start-layer {
+    top: 76px;
+    left: 12px;
+    width: calc(100% - 24px);
+    max-height: calc(100dvh - 134px);
+    padding: 20px;
+    border-radius: 18px;
+  }
+}
+@media (max-height: 500px) {
+  .start-layer {
+    top: 70px;
+    left: 16px;
+    width: min(440px, calc(100% - 32px));
+    max-height: calc(100dvh - 120px);
+    padding: 16px;
+    border-radius: 16px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .camp-disclosure > summary::after {
+    transition: none;
+  }
+}

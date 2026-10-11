@@ -26,6 +26,18 @@ export function createCreeper(
   x: number,
   z: number,
 ): Creeper {
+  if (world.top(x, z) > world.ground(x, z) + 1) {
+    outer: for (let r = 1; r <= 4; r++)
+      for (let dx = -r; dx <= r; dx++)
+        for (let dz = -r; dz <= r; dz++) {
+          const top = world.top(x + dx, z + dz);
+          if (top >= 1 && top <= world.ground(x + dx, z + dz) + 1) {
+            x += dx;
+            z += dz;
+            break outer;
+          }
+        }
+  }
   const spawn = { x: x + 0.5, y: world.top(x, z), z: z + 0.5 };
   return {
     pos: { ...spawn },
@@ -63,8 +75,10 @@ export function stepCreeper(
   mob: Creeper,
   player: Vec,
   dt: number,
+  options: { night?: boolean; adventure?: boolean } = {},
 ): boolean {
   if (mob.cooldown > 0) {
+    if (options.adventure && !options.night) return false;
     mob.cooldown = Math.max(0, mob.cooldown - dt);
     if (mob.cooldown === 0) {
       mob.pos = { ...mob.spawn, y: world.top(mob.spawn.x, mob.spawn.z) };
@@ -81,7 +95,7 @@ export function stepCreeper(
     distance < 14 &&
     Math.abs(player.y - mob.pos.y) < 3 &&
     seesPlayer(world, mob, player);
-  const safe = Math.hypot(player.x + 5.5, player.z - 9.5) < 4;
+  const safe = !options.night && Math.hypot(player.x + 5.5, player.z - 9.5) < 4;
   if (visible && !safe && distance < 2.6) mob.fuse += dt;
   else mob.fuse = Math.max(0, mob.fuse - dt * 2);
   if (mob.fuse >= 1.6) {
@@ -90,8 +104,8 @@ export function stepCreeper(
     return true;
   }
   const chase = visible && !safe && distance > 1.8 && mob.fuse === 0;
-  const vx = chase ? (dx / distance) * 2.25 : 0;
-  const vz = chase ? (dz / distance) * 2.25 : 0;
+  const vx = chase ? (dx / distance) * (options.night ? 2.8 : 2.25) : 0;
+  const vz = chase ? (dz / distance) * (options.night ? 2.8 : 2.25) : 0;
   // StepBody prevents wall tunneling and supplies gravity; hop over single blocks.
   const obstruction =
     chase &&

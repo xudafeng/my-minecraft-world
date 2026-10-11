@@ -1,4 +1,11 @@
 import {
+  Survival,
+  DAY_LENGTH,
+  CYCLE_LENGTH,
+  type SurvivalSave,
+  type Recipe,
+} from './survival';
+import {
   createCreeper,
   stepCreeper,
   seesPlayer,
@@ -35,6 +42,11 @@ import {
 export type GameState = {
   adventure?: AdventureSave;
   health?: number;
+  survival?: SurvivalSave;
+  night?: boolean;
+  day?: number;
+  phaseRemaining?: number;
+  activity?: 'resources' | 'crafted' | 'dawn' | 'night' | null;
   danger?: boolean;
   combatNotice?: 'hit' | 'hurt' | 'defeated' | 'respawn' | null;
   ready: boolean;
@@ -154,6 +166,10 @@ export class VoxelGame {
   relics = new THREE.Group();
   airJumpUsed = false;
   health = 100;
+  survival = new Survival();
+  sunlight: THREE.DirectionalLight | null = null;
+  skylight: THREE.HemisphereLight | null = null;
+  activityUntil = 0;
   mobs: { body: Creeper; mesh: THREE.Group }[] = [];
   combatUntil = 0;
   cleanup: (() => void)[] = [];
@@ -190,6 +206,7 @@ export class VoxelGame {
     this.revision = saved.revision;
     this.saveAllowed = saved.available;
     this.state.saveStatus = saved.available ? 'ready' : 'unavailable';
+    if (!saved.snapshot) this.state.selected = HOTBAR.indexOf(BLOCK.wood);
     if (saved.snapshot) {
       this.restore(saved.snapshot);
       this.state.saveStatus = 'saved';
@@ -206,8 +223,9 @@ export class VoxelGame {
     host.appendChild(this.renderer.domElement);
     this.scene.background = new THREE.Color(0xa9d8e7);
     this.scene.fog = new THREE.Fog(0xa9d8e7, 38, 85);
-    this.scene.add(new THREE.HemisphereLight(0xe4f4ff, 0x7f8756, 2));
-    const sun = new THREE.DirectionalLight(0xffefd2, 2.1);
+    this.skylight = new THREE.HemisphereLight(0xe4f4ff, 0x7f8756, 2);
+    this.scene.add(this.skylight);
+    const sun = (this.sunlight = new THREE.DirectionalLight(0xffefd2, 2.1));
     sun.position.set(-20, 35, 16);
     this.scene.add(sun);
     this.texture = this.makeAtlas();
@@ -239,6 +257,13 @@ export class VoxelGame {
     this.frame = requestAnimationFrame((t) => this.tick(t));
   }
   emit() {
+    this.state.survival = {
+      ...this.survival.data,
+      inventory: { ...this.survival.data.inventory },
+    };
+    this.state.night = this.survival.night;
+    this.state.day = this.survival.day;
+    this.state.phaseRemaining = this.survival.remaining;
     this.state.health = this.health;
     this.state.danger = this.mobs.some(
       (m) => m.body.cooldown === 0 && m.body.fuse > 0,
@@ -247,8 +272,8 @@ export class VoxelGame {
       ...this.adventure.data,
       collected: [...this.adventure.data.collected],
     };
-    this.state.canUndo = this.session.canUndo;
-    this.state.canRedo = this.session.canRedo;
+    this.state.canUndo = this.survival.creative && this.session.canUndo;
+    this.state.canRedo = this.survival.creative && this.session.canRedo;
     if (!this.disposed)
       this.onChange({ ...this.state, hotbar: [...this.state.hotbar] });
   }
@@ -257,6 +282,7 @@ export class VoxelGame {
     this.health =
       snapshot.health && snapshot.health > 0 ? snapshot.health : 100;
     this.airJumpUsed = false;
+    this.survival = new Survival(snapshot.survival);
     this.adventure = new Adventure(snapshot.adventure);
     this.session = session;
     this.world = session.world;
@@ -279,6 +305,10 @@ export class VoxelGame {
         this.state.hotbar,
         this.state.selected,
       ),
+      survival: {
+        ...this.survival.data,
+        inventory: { ...this.survival.data.inventory },
+      },
       health: this.health,
       adventure: {
         ...this.adventure.data,
@@ -357,6 +387,7 @@ export class VoxelGame {
       this.chooseMaterial(this.hit.block);
   }
   history(redo = false) {
+    if (!this.survival.creative) return;
     const available = redo ? this.session.canRedo : this.session.canUndo;
     const edit = redo
       ? this.session.redo(this.pos)
@@ -858,6 +889,10 @@ export class VoxelGame {
     }
     const { x, y, z } = hit;
     if (place) {
+      if (!this.survival.canPlace(this.state.hotbar[this.state.selected])) {
+        this.activity('resources');
+        return;
+      }
       const nx = x + hit.normal.x,
         ny = y + hit.normal.y,
         nz = z + hit.normal.z;
@@ -884,7 +919,10 @@ export class VoxelGame {
         this.state.hotbar[this.state.selected],
         this.pos,
       );
-      if (edit) this.afterEdit();
+      if (edit) {
+        this.survival.spend(edit.after);
+        this.afterEdit();
+      }
     } else {
       if (hit.block === BLOCK.bedrock) {
         this.notify('bedrock');
@@ -892,6 +930,7 @@ export class VoxelGame {
       }
       const edit = this.session.edit(x, y, z, 0, this.pos);
       if (edit) {
+        if (!this.survival.creative) this.survival.add(hit.block);
         this.burst(x + 0.5, y + 0.5, z + 0.5, hit.block);
         this.afterEdit();
       }
@@ -923,8 +962,8 @@ export class VoxelGame {
       });
     }
   }
-  respawn() {
-    this.health = 100;
+  respawn(heal = false) {
+    if (heal || this.survival.creative) this.health = 100;
     this.airJumpUsed = false;
     this.pos = { x: -5.5, y: 2, z: 9.5 };
     while (collides(this.world, this.pos) && this.pos.y < 28) this.pos.y += 1;
@@ -967,8 +1006,19 @@ export class VoxelGame {
     this.combatUntil = performance.now() + 2400;
     this.emit();
   }
+  creeperSpawn(index: number): [number, number] {
+    if (!this.survival.creative && this.survival.night) {
+      const angle = (index / CREEPER_SPAWNS.length) * Math.PI * 2;
+      return [
+        Math.floor(-5.5 + Math.cos(angle) * 11),
+        Math.floor(9.5 + Math.sin(angle) * 11),
+      ];
+    }
+    return CREEPER_SPAWNS[index] as [number, number];
+  }
   createCreepers() {
-    CREEPER_SPAWNS.forEach(([x, z]) => {
+    CREEPER_SPAWNS.forEach((_, index) => {
+      const [x, z] = this.creeperSpawn(index);
       const mesh = new THREE.Group();
       this.cube(mesh, 0x58a63c, [0, 1.05, 0], [0.55, 0.9, 0.38]);
       this.cube(mesh, 0x70b34d, [0, 1.72, 0], [0.7, 0.65, 0.6]);
@@ -988,13 +1038,11 @@ export class VoxelGame {
   }
   resetCreepers() {
     this.mobs.forEach((m, i) => {
-      m.body = createCreeper(
-        this.world,
-        ...(CREEPER_SPAWNS[i] as [number, number]),
-      );
+      m.body = createCreeper(this.world, ...this.creeperSpawn(i));
     });
   }
   punchCreeper() {
+    if (this.survival.creative) return false;
     const direction = new THREE.Vector3();
     this.camera.getWorldDirection(direction);
     const candidates = this.mobs
@@ -1020,7 +1068,7 @@ export class VoxelGame {
     );
     if (!target) return false;
     const m = target.m;
-    m.body.health--;
+    m.body.health -= this.survival.data.sword ? 2 : 1;
     m.body.fuse = 0;
     const dx = m.body.pos.x - this.pos.x,
       dz = m.body.pos.z - this.pos.z;
@@ -1028,23 +1076,38 @@ export class VoxelGame {
     stepBody(this.world, m.body, (dx / len) * 18, (dz / len) * 18, false, 0.1);
     this.swing = 1;
     this.burst(m.body.pos.x, m.body.pos.y + 1, m.body.pos.z, BLOCK.leaf);
-    if (m.body.health <= 0) m.body.cooldown = 30;
+    if (m.body.health <= 0) {
+      m.body.cooldown = 30;
+      if (!this.survival.creative) {
+        this.survival.add(BLOCK.stone, 2);
+        this.markDirty();
+      }
+    }
     this.combatNotice(m.body.health <= 0 ? 'defeated' : 'hit');
     return true;
   }
   updateCreepers(dt: number) {
     for (const m of this.mobs) {
-      if (this.state.playing && stepCreeper(this.world, m.body, this.pos, dt)) {
+      if (this.survival.creative) {
+        m.mesh.visible = false;
+        continue;
+      }
+      if (
+        this.state.playing &&
+        stepCreeper(this.world, m.body, this.pos, dt, {
+          night: !this.survival.creative && this.survival.night,
+          adventure: !this.survival.creative,
+        })
+      ) {
         const p = m.body.pos;
         const distance = Math.hypot(
           this.pos.x - p.x,
           this.pos.y - p.y,
           this.pos.z - p.z,
         );
-        const damage = blastDamage(
-          distance,
-          !seesPlayer(this.world, m.body, this.pos),
-        );
+        const damage = this.survival.creative
+          ? 0
+          : blastDamage(distance, !seesPlayer(this.world, m.body, this.pos));
         this.health = Math.max(0, this.health - damage);
         for (let x = Math.floor(p.x) - 2; x <= Math.floor(p.x) + 2; x++)
           for (let y = Math.floor(p.y) - 1; y <= Math.floor(p.y) + 2; y++)
@@ -1057,7 +1120,7 @@ export class VoxelGame {
           this.burst(p.x, p.y + 0.7, p.z, BLOCK.stone);
         this.afterEdit();
         if (this.health === 0) {
-          this.respawn();
+          this.respawn(true);
           this.combatNotice('respawn');
         } else if (damage) {
           const dx = this.pos.x - p.x,
@@ -1092,6 +1155,73 @@ export class VoxelGame {
       m.mesh.scale.setScalar(1 + m.body.fuse * 0.08);
     }
     if (performance.now() > this.combatUntil) this.state.combatNotice = null;
+  }
+  activity(message: NonNullable<GameState['activity']>) {
+    this.state.activity = message;
+    this.activityUntil = performance.now() + 3000;
+    this.emit();
+  }
+  craft(recipe: Recipe) {
+    if (recipe === 'food' && this.health >= 100) return;
+    if (!this.survival.craft(recipe)) {
+      this.activity('resources');
+      return;
+    }
+    if (recipe === 'food') this.health = Math.min(100, this.health + 35);
+    this.markDirty();
+    this.activity('crafted');
+    void this.save();
+  }
+  toggleMode() {
+    this.pause();
+    this.survival.data.mode = this.survival.creative ? 'adventure' : 'creative';
+    this.resetCreepers();
+    this.markDirty();
+    this.emit();
+    void this.save();
+  }
+  updateSurvival(dt: number) {
+    if (this.state.playing) {
+      const night = this.survival.night;
+      if (this.survival.tick(dt)) this.activity('dawn');
+      if (!night && this.survival.night && !this.survival.creative) {
+        this.mobs.forEach((m, i) => {
+          const angle = (i / this.mobs.length) * Math.PI * 2;
+          m.body = createCreeper(
+            this.world,
+            Math.floor(-5.5 + Math.cos(angle) * 11),
+            Math.floor(9.5 + Math.sin(angle) * 11),
+          );
+        });
+        this.activity('night');
+      }
+      if (
+        !this.survival.night &&
+        Math.hypot(this.pos.x + 5.5, this.pos.z - 9.5) < 4 &&
+        this.health < 100
+      ) {
+        this.health = Math.min(
+          100,
+          this.health + dt * (2 + this.survival.data.camp * 2),
+        );
+        this.markDirty();
+      }
+      this.markDirty();
+    }
+    const phase = this.survival.data.time % CYCLE_LENGTH;
+    const light =
+      phase < DAY_LENGTH
+        ? Math.min(1, (DAY_LENGTH - phase) / 20)
+        : Math.min(1, Math.max(0, (phase - (CYCLE_LENGTH - 20)) / 20));
+    const sky = new THREE.Color(0x172139).lerp(
+      new THREE.Color(0xa9d8e7),
+      light,
+    );
+    (this.scene.background as THREE.Color).copy(sky);
+    (this.scene.fog as THREE.Fog).color.copy(sky);
+    if (this.sunlight) this.sunlight.intensity = 0.15 + light * 1.95;
+    if (this.skylight) this.skylight.intensity = 0.55 + light * 1.45;
+    if (performance.now() > this.activityUntil) this.state.activity = null;
   }
   createRelics() {
     RELICS.forEach((r, id) => {
@@ -1244,6 +1374,7 @@ export class VoxelGame {
       this.camera.lookAt(-3, 3, -2);
       this.selection.visible = false;
     }
+    this.updateSurvival(dt);
     this.updateCreepers(dt);
     this.updateAdventure(dt);
     this.sheep.forEach((s, i) => {

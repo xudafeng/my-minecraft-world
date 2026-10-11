@@ -1,3 +1,4 @@
+import { parseSurvival, type SurvivalSave } from './survival.ts';
 import { parseAdventure, type AdventureSave } from './adventure.ts';
 import {
   VoxelWorld,
@@ -21,6 +22,7 @@ export type Edit = {
 export type WorldSnapshot = {
   adventure?: AdventureSave;
   health?: number;
+  survival?: SurvivalSave;
   version: 1;
   worldVersion: 1;
   edits: [number, number, number, number][];
@@ -85,6 +87,9 @@ export function parseSnapshot(value: unknown): WorldSnapshot {
     version: 1,
     worldVersion: 1,
     edits,
+    ...(v.survival === undefined
+      ? {}
+      : { survival: parseSurvival(v.survival) }),
     ...(v.health === undefined ? {} : { health: v.health }),
     ...(v.adventure === undefined
       ? {}
