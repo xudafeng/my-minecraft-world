@@ -1,3 +1,4 @@
+import { parseAdventure, type AdventureSave } from './adventure.ts';
 import {
   VoxelWorld,
   BLOCK,
@@ -18,6 +19,7 @@ export type Edit = {
   after: number;
 };
 export type WorldSnapshot = {
+  adventure?: AdventureSave;
   version: 1;
   worldVersion: 1;
   edits: [number, number, number, number][];
@@ -77,6 +79,9 @@ export function parseSnapshot(value: unknown): WorldSnapshot {
     version: 1,
     worldVersion: 1,
     edits,
+    ...(v.adventure === undefined
+      ? {}
+      : { adventure: parseAdventure(v.adventure) }),
     player: {
       pos: { x: p.pos.x, y: p.pos.y, z: p.pos.z },
       yaw: p.yaw,

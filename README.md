@@ -99,3 +99,14 @@ npm run build
 Tests cover physics, editable boundaries, undo/redo, snapshot validation, persistence transactions and conflicting tabs (using an IndexedDB test implementation), independent touch pointers, and language preferences. Basic movement and block interactions were checked in a local browser on the previous version. Browser interaction and physical-phone acceptance testing for this branch remain pending.
 
 This is an independent project inspired by Minecraft's block-based style. It is not affiliated with Mojang or Microsoft.
+
+## Treasure adventure
+
+Find eight spinning golden relics across the pumpkin patch, bridge, forest, mountains and cabin rooftop. Walk into them to collect. The HUD shows your next destination, coordinates, progress and active play time. Build stairs to reach the roof.
+
+- Three relics unlock faster movement and sprinting.
+- Five relics unlock a second jump in midair.
+- All eight record your personal best. Start another run from the pause menu; unlocked abilities carry into subsequent runs.
+
+Pausing stops the timer. Adventure progress is included in autosaves and JSON exports; older saves remain compatible. This is a casual personal challenge, not a competitive or tamper-proof leaderboard.
+

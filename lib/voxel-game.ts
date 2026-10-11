@@ -1,6 +1,7 @@
+import { Adventure, RELICS, type AdventureSave } from './adventure';
 import type { GameMessage } from './i18n';
 import * as THREE from 'three';
-import { WorldSession, type WorldSnapshot } from './world-session';
+import { WorldSession } from './world-session';
 import {
   saveBrowserWorld,
   SaveConflict,
@@ -24,6 +25,7 @@ import {
   stepBody,
 } from './voxel-world';
 export type GameState = {
+  adventure?: AdventureSave;
   ready: boolean;
   playing: boolean;
   started: boolean;
@@ -137,6 +139,9 @@ export class VoxelGame {
   );
   arm = new THREE.Group();
   sheep: THREE.Group[] = [];
+  adventure = new Adventure();
+  relics = new THREE.Group();
+  airJumpUsed = false;
   cleanup: (() => void)[] = [];
   onChange: (s: GameState) => void;
   host: HTMLElement;
@@ -204,7 +209,8 @@ export class VoxelGame {
       depthWrite: false,
       side: THREE.DoubleSide,
     });
-    this.scene.add(this.meshes, this.decorations, this.selection);
+    this.scene.add(this.meshes, this.decorations, this.selection, this.relics);
+    this.createRelics();
     this.selection.visible = false;
     this.scene.add(this.camera);
     this.rebuild();
@@ -218,6 +224,10 @@ export class VoxelGame {
     this.frame = requestAnimationFrame((t) => this.tick(t));
   }
   emit() {
+    this.state.adventure = {
+      ...this.adventure.data,
+      collected: [...this.adventure.data.collected],
+    };
     this.state.canUndo = this.session.canUndo;
     this.state.canRedo = this.session.canRedo;
     if (!this.disposed)
@@ -225,6 +235,7 @@ export class VoxelGame {
   }
   restore(value: unknown) {
     const { session, snapshot } = WorldSession.restore(value);
+    this.adventure = new Adventure(snapshot.adventure);
     this.session = session;
     this.world = session.world;
     this.pos = { ...snapshot.player.pos };
@@ -240,11 +251,17 @@ export class VoxelGame {
     this.camera.rotation.set(this.pitch, this.yaw, 0, 'YXZ');
   }
   snapshot() {
-    return this.session.snapshot(
-      { pos: this.pos, yaw: this.yaw, pitch: this.pitch },
-      this.state.hotbar,
-      this.state.selected,
-    );
+    return {
+      ...this.session.snapshot(
+        { pos: this.pos, yaw: this.yaw, pitch: this.pitch },
+        this.state.hotbar,
+        this.state.selected,
+      ),
+      adventure: {
+        ...this.adventure.data,
+        collected: [...this.adventure.data.collected],
+      },
+    };
   }
   markDirty() {
     this.dirty = true;
@@ -903,7 +920,79 @@ export class VoxelGame {
     if (x || y) this.markDirty();
   }
   jump() {
-    this.jumpQueued = true;
+    if (!this.grounded && this.adventure.doubleJump && !this.airJumpUsed) {
+      this.velocity = 8.5;
+      this.airJumpUsed = true;
+      this.jumpQueued = false;
+    } else this.jumpQueued = true;
+  }
+  restartAdventure() {
+    if (!this.adventure.restart()) return;
+    this.airJumpUsed = false;
+    this.respawn();
+    this.markDirty();
+    this.emit();
+    void this.save();
+  }
+  createRelics() {
+    RELICS.forEach((r, id) => {
+      const group = new THREE.Group();
+      const gem = new THREE.Mesh(
+        new THREE.OctahedronGeometry(0.38),
+        new THREE.MeshStandardMaterial({
+          color: 0xffd45d,
+          emissive: 0xffaa22,
+          emissiveIntensity: 1.2,
+          roughness: 0.3,
+        }),
+      );
+      group.add(gem);
+      const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(0.62, 0.035, 6, 32),
+        new THREE.MeshBasicMaterial({ color: 0xffe8a0 }),
+      );
+      ring.rotation.x = Math.PI / 2;
+      group.add(ring);
+      const beam = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.05, 0.16, 5, 8),
+        new THREE.MeshBasicMaterial({
+          color: 0xffce62,
+          transparent: true,
+          opacity: 0.18,
+          depthWrite: false,
+        }),
+      );
+      beam.position.y = 2.5;
+      group.add(beam);
+      group.userData.id = id;
+      this.relics.add(group);
+    });
+  }
+  updateAdventure(dt: number) {
+    if (this.state.playing && !this.adventure.complete)
+      this.adventure.data.elapsed += dt;
+    this.relics.children.forEach((o, id) => {
+      const r = RELICS[id];
+      const height = this.world.top(r.x, r.z) + 0.95;
+      o.position.set(
+        r.x + 0.5,
+        height + Math.sin(this.clock * 2 + id) * 0.15,
+        r.z + 0.5,
+      );
+      o.rotation.y += dt;
+      o.visible = !this.adventure.data.collected.includes(id);
+      if (
+        this.state.playing &&
+        o.visible &&
+        this.adventure.collect(id, this.pos, o.position)
+      ) {
+        o.visible = false;
+        this.burst(o.position.x, o.position.y, o.position.z, BLOCK.sand);
+        this.markDirty();
+        void this.save();
+        this.emit();
+      }
+    });
   }
   updateTarget() {
     const direction = new THREE.Vector3();
@@ -945,8 +1034,12 @@ export class VoxelGame {
       const speed = water
         ? 2.8
         : this.keys.has('ShiftLeft') || this.keys.has('ShiftRight')
-          ? 7
-          : 4.6;
+          ? this.adventure.boost
+            ? 10
+            : 7
+          : this.adventure.boost
+            ? 5.6
+            : 4.6;
       const body = stepBody(
         this.world,
         { pos: this.pos, velocity: this.velocity, grounded: this.grounded },
@@ -957,6 +1050,7 @@ export class VoxelGame {
       );
       this.velocity = body.velocity;
       this.grounded = body.grounded;
+      if (this.grounded) this.airJumpUsed = false;
       if (
         Math.abs(before.x - this.pos.x) > 1e-6 ||
         Math.abs(before.y - this.pos.y) > 1e-6 ||
@@ -991,6 +1085,7 @@ export class VoxelGame {
       this.camera.lookAt(-3, 3, -2);
       this.selection.visible = false;
     }
+    this.updateAdventure(dt);
     this.sheep.forEach((s, i) => {
       const x = (i ? 9 : 7) + Math.sin(this.clock * 0.2 + i) * 0.7,
         z = (i ? 9 : 7) + Math.cos(this.clock * 0.2 + i) * 0.6;
