@@ -234,138 +234,151 @@ export default function Game() {
               </Button>
             )}
             {state.ready && (
-              <div className="camp-panel">
-                <div className="camp-title">
-                  <strong>
-                    <Hammer size={18} aria-hidden="true" />
-                    {locale === 'zh-CN' ? '营地工作台' : 'Camp workbench'}
-                  </strong>
-                  <Button onClick={() => game.current?.toggleMode()}>
-                    {state.survival?.mode === 'creative'
+              <details
+                className="camp-disclosure"
+                open={state.started || undefined}
+              >
+                <summary>
+                  <Hammer size={17} aria-hidden="true" />
+                  <span>
+                    {locale === 'zh-CN' ? '物资与制作' : 'Supplies & crafting'}
+                  </span>
+                </summary>
+                <div className="camp-panel">
+                  <div className="camp-title">
+                    <strong>
+                      <Hammer size={18} aria-hidden="true" />
+                      {locale === 'zh-CN' ? '营地工作台' : 'Camp workbench'}
+                    </strong>
+                    <Button onClick={() => game.current?.toggleMode()}>
+                      {state.survival?.mode === 'creative'
+                        ? locale === 'zh-CN'
+                          ? '切换探险模式'
+                          : 'Switch to adventure'
+                        : locale === 'zh-CN'
+                          ? '切换自由建造'
+                          : 'Switch to creative'}
+                    </Button>
+                  </div>
+                  <p>
+                    {locale === 'zh-CN'
+                      ? '白天 3 分钟，夜晚 90 秒。夜里安全区失效；采集材料、制作石剑，搭墙挡住爆炸。白天回营地恢复生命。'
+                      : '3-minute days, 90-second nights. Home loses its protection at night. Gather, craft a stone sword and build blast cover. Heal at camp during daylight.'}
+                  </p>
+                  <p>
+                    ♥ {Math.ceil(state.health ?? 100)}/100 ·{' '}
+                    {state.survival?.sword
                       ? locale === 'zh-CN'
-                        ? '切换探险模式'
-                        : 'Switch to adventure'
+                        ? '已装备石剑'
+                        : 'Stone sword equipped'
                       : locale === 'zh-CN'
-                        ? '切换自由建造'
-                        : 'Switch to creative'}
-                  </Button>
-                </div>
-                <p>
-                  {locale === 'zh-CN'
-                    ? '白天 3 分钟，夜晚 90 秒。夜里安全区失效；采集材料、制作石剑，搭墙挡住爆炸。白天回营地恢复生命。'
-                    : '3-minute days, 90-second nights. Home loses its protection at night. Gather, craft a stone sword and build blast cover. Heal at camp during daylight.'}
-                </p>
-                <p>
-                  ♥ {Math.ceil(state.health ?? 100)}/100 ·{' '}
-                  {state.survival?.sword
-                    ? locale === 'zh-CN'
-                      ? '已装备石剑'
-                      : 'Stone sword equipped'
-                    : locale === 'zh-CN'
-                      ? '徒手'
-                      : 'Bare hands'}
-                </p>
-                {state.activity === 'crafted' && (
-                  <output>{locale === 'zh-CN' ? '制作完成' : 'Crafted'}</output>
-                )}
-                <div className="resource-list">
-                  {Object.entries(state.survival?.inventory ?? {})
-                    .filter(([, n]) => n > 0)
-                    .map(([b, n]) => (
-                      <span key={b}>
-                        <i
-                          className={'resource-swatch block-' + b}
-                          aria-hidden="true"
-                        />
-                        {blockName(locale, Number(b))} <b>{n}</b>
-                      </span>
-                    ))}
-                </div>
-                <div className="recipe-list">
-                  {(Object.keys(RECIPES) as Recipe[]).map((recipe) => {
-                    const names = {
-                      planks: ['木板 ×4', 'Planks ×4'],
-                      glass: ['玻璃 ×3', 'Glass ×3'],
-                      roof: ['屋顶 ×3', 'Roof ×3'],
-                      sword: ['石剑 · 两击击败', 'Stone sword · 2 hits'],
-                      food: ['南瓜餐 · 恢复35', 'Pumpkin meal · Heal 35'],
-                      camp: [
-                        '营地升级 · 加快恢复',
-                        'Camp upgrade · Faster healing',
-                      ],
-                    };
-                    const unlocked =
-                      (recipe === 'sword' && state.survival?.sword) ||
-                      (recipe === 'camp' && (state.survival?.camp ?? 0) >= 3);
-                    const affordable =
-                      state.survival?.mode === 'creative' ||
-                      Object.entries(RECIPES[recipe].cost).every(
-                        ([id, n]) =>
-                          (state.survival?.inventory[Number(id)] ?? 0) >= n,
-                      );
-                    const RecipeIcon = {
-                      planks: Layers,
-                      glass: Box,
-                      roof: Home,
-                      sword: Sword,
-                      food: Soup,
-                      camp: Tent,
-                    }[recipe];
-                    return (
-                      <Button
-                        className="recipe-card"
-                        key={recipe}
-                        disabled={
-                          !!unlocked ||
-                          !affordable ||
-                          (recipe === 'food' && (state.health ?? 100) >= 100)
-                        }
-                        onClick={() => game.current?.craft(recipe)}
-                      >
-                        <span className="recipe-icon">
-                          <RecipeIcon size={19} aria-hidden="true" />
+                        ? '徒手'
+                        : 'Bare hands'}
+                  </p>
+                  {state.activity === 'crafted' && (
+                    <output>
+                      {locale === 'zh-CN' ? '制作完成' : 'Crafted'}
+                    </output>
+                  )}
+                  <div className="resource-list">
+                    {Object.entries(state.survival?.inventory ?? {})
+                      .filter(([, n]) => n > 0)
+                      .map(([b, n]) => (
+                        <span key={b}>
+                          <i
+                            className={'resource-swatch block-' + b}
+                            aria-hidden="true"
+                          />
+                          {blockName(locale, Number(b))} <b>{n}</b>
                         </span>
-                        <span className="recipe-copy">
-                          <strong>
-                            {names[recipe][locale === 'zh-CN' ? 0 : 1]}
-                          </strong>
-                          <small>
-                            {Object.entries(RECIPES[recipe].cost)
-                              .map(
-                                ([id, n]) =>
-                                  `${blockName(locale, Number(id))} ${n}`,
-                              )
-                              .join(' + ')}
-                          </small>
-                          <span className="recipe-status">
-                            {unlocked
-                              ? locale === 'zh-CN'
-                                ? '已升级'
-                                : 'Unlocked'
-                              : !affordable
-                                ? locale === 'zh-CN'
-                                  ? '材料不足'
-                                  : 'Need materials'
-                                : recipe === 'food' &&
-                                    (state.health ?? 100) >= 100
-                                  ? locale === 'zh-CN'
-                                    ? '生命已满'
-                                    : 'Full health'
-                                  : locale === 'zh-CN'
-                                    ? '点击制作'
-                                    : 'Craft'}
+                      ))}
+                  </div>
+                  <div className="recipe-list">
+                    {(Object.keys(RECIPES) as Recipe[]).map((recipe) => {
+                      const names = {
+                        planks: ['木板 ×4', 'Planks ×4'],
+                        glass: ['玻璃 ×3', 'Glass ×3'],
+                        roof: ['屋顶 ×3', 'Roof ×3'],
+                        sword: ['石剑 · 两击击败', 'Stone sword · 2 hits'],
+                        food: ['南瓜餐 · 恢复35', 'Pumpkin meal · Heal 35'],
+                        camp: [
+                          '营地升级 · 加快恢复',
+                          'Camp upgrade · Faster healing',
+                        ],
+                      };
+                      const unlocked =
+                        (recipe === 'sword' && state.survival?.sword) ||
+                        (recipe === 'camp' && (state.survival?.camp ?? 0) >= 3);
+                      const affordable =
+                        state.survival?.mode === 'creative' ||
+                        Object.entries(RECIPES[recipe].cost).every(
+                          ([id, n]) =>
+                            (state.survival?.inventory[Number(id)] ?? 0) >= n,
+                        );
+                      const RecipeIcon = {
+                        planks: Layers,
+                        glass: Box,
+                        roof: Home,
+                        sword: Sword,
+                        food: Soup,
+                        camp: Tent,
+                      }[recipe];
+                      return (
+                        <Button
+                          className="recipe-card"
+                          key={recipe}
+                          disabled={
+                            !!unlocked ||
+                            !affordable ||
+                            (recipe === 'food' && (state.health ?? 100) >= 100)
+                          }
+                          onClick={() => game.current?.craft(recipe)}
+                        >
+                          <span className="recipe-icon">
+                            <RecipeIcon size={19} aria-hidden="true" />
                           </span>
-                        </span>
-                      </Button>
-                    );
-                  })}
+                          <span className="recipe-copy">
+                            <strong>
+                              {names[recipe][locale === 'zh-CN' ? 0 : 1]}
+                            </strong>
+                            <small>
+                              {Object.entries(RECIPES[recipe].cost)
+                                .map(
+                                  ([id, n]) =>
+                                    `${blockName(locale, Number(id))} ${n}`,
+                                )
+                                .join(' + ')}
+                            </small>
+                            <span className="recipe-status">
+                              {unlocked
+                                ? locale === 'zh-CN'
+                                  ? '已升级'
+                                  : 'Unlocked'
+                                : !affordable
+                                  ? locale === 'zh-CN'
+                                    ? '材料不足'
+                                    : 'Need materials'
+                                  : recipe === 'food' &&
+                                      (state.health ?? 100) >= 100
+                                    ? locale === 'zh-CN'
+                                      ? '生命已满'
+                                      : 'Full health'
+                                    : locale === 'zh-CN'
+                                      ? '点击制作'
+                                      : 'Craft'}
+                            </span>
+                          </span>
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  <small>
+                    {locale === 'zh-CN'
+                      ? `营地等级 ${state.survival?.camp ?? 0}/3 · 探险模式中放置消耗材料，挖掘回收，撤销关闭`
+                      : `Camp level ${state.survival?.camp ?? 0}/3 · Adventure building consumes materials; mining recovers them; undo is disabled`}
+                  </small>
                 </div>
-                <small>
-                  {locale === 'zh-CN'
-                    ? `营地等级 ${state.survival?.camp ?? 0}/3 · 探险模式中放置消耗材料，挖掘回收，撤销关闭`
-                    : `Camp level ${state.survival?.camp ?? 0}/3 · Adventure building consumes materials; mining recovers them; undo is disabled`}
-                </small>
-              </div>
+              </details>
             )}
             <div className="start-note">{t.startNote}</div>
             {state.ready && (

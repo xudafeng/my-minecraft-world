@@ -1270,10 +1270,6 @@ kbd {
   text-align: center;
   pointer-events: none;
 }
-.start-card {
-  max-height: calc(100dvh - 120px);
-  overflow-y: auto;
-}
 
 @media (max-height: 500px) and (min-width: 701px) {
   .adventure-hud {
@@ -1296,5 +1292,109 @@ kbd {
   .activity-notice {
     top: 26%;
     font-size: 12px;
+  }
+}
+
+/* One native scroll surface; scenery stays unobscured outside the menu. */
+.start-layer {
+  display: block;
+  inset: auto;
+  top: 92px;
+  left: 32px;
+  right: auto;
+  bottom: auto;
+  width: min(460px, calc(100% - 64px));
+  max-height: calc(100dvh - 152px);
+  padding: 24px;
+  border: 1px solid #e3edcb20;
+  border-radius: 22px;
+  background: #132e27c9;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 18px 50px #081c2433;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: #afc3a055 transparent;
+  scroll-padding-block: 24px;
+}
+.start-layer .start-card {
+  width: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  overflow: visible;
+}
+.start-layer .adventure-intro {
+  color: #cad4be;
+  font-size: 12px;
+  line-height: 1.65;
+}
+.camp-disclosure {
+  margin: 18px 0 14px;
+  border: 1px solid #bcd1a82b;
+  border-radius: 14px;
+  background: #0b21172b;
+}
+.camp-disclosure > summary {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 13px 14px;
+  list-style: none;
+  cursor: pointer;
+  color: #e3dbc0;
+  font-size: 13px;
+  user-select: none;
+}
+.camp-disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+.camp-disclosure > summary::after {
+  content: '⌄';
+  margin-left: auto;
+  color: #baccad;
+  transition: transform 0.15s;
+}
+.camp-disclosure[open] > summary::after {
+  transform: rotate(180deg);
+}
+.camp-disclosure > summary:focus-visible {
+  outline: 2px solid #e6cc91;
+  outline-offset: 3px;
+  border-radius: 12px;
+}
+.camp-disclosure .camp-panel {
+  margin: 0;
+  border: 0;
+  border-top: 1px solid #bcd1a81c;
+  border-radius: 0 0 14px 14px;
+  box-shadow: none;
+}
+@media (max-width: 600px) {
+  .start-layer {
+    top: 76px;
+    left: 12px;
+    width: calc(100% - 24px);
+    max-height: calc(100dvh - 134px);
+    padding: 20px;
+    border-radius: 18px;
+  }
+}
+@media (max-height: 500px) {
+  .start-layer {
+    top: 70px;
+    left: 16px;
+    width: min(440px, calc(100% - 32px));
+    max-height: calc(100dvh - 120px);
+    padding: 16px;
+    border-radius: 16px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .camp-disclosure > summary::after {
+    transition: none;
   }
 }
