@@ -950,3 +950,113 @@ kbd {
     bottom: 124px;
   }
 }
+
+.adventure-intro {
+  margin: 14px 0;
+  color: #765424;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.adventure-hud {
+  position: absolute;
+  top: 100px;
+  left: 24px;
+  width: 275px;
+  padding: 16px;
+  border: 1px solid #ffe4a955;
+  border-radius: 16px;
+  background: #17271ed9;
+  color: #fff4d1;
+  pointer-events: none;
+  backdrop-filter: blur(12px);
+}
+.adventure-hud strong {
+  font-size: 15px;
+}
+.adventure-hud p {
+  margin: 8px 0;
+  font-size: 13px;
+}
+.adventure-hud small {
+  color: #bed0b9;
+  font-size: 11px;
+}
+.relic-progress {
+  display: flex;
+  gap: 12px;
+  margin-top: 10px;
+  color: #627668;
+}
+.relic-progress .found {
+  color: #ffd36b;
+  text-shadow: 0 0 12px #ffc444;
+}
+@media (max-width: 700px) {
+  .adventure-hud {
+    top: 80px;
+    left: 12px;
+    width: 220px;
+    padding: 10px;
+  }
+  .adventure-hud small {
+    display: none;
+  }
+  .relic-progress {
+    gap: 9px;
+  }
+}
+
+.survival-hud {
+  position: absolute;
+  top: 100px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 260px;
+  padding: 14px;
+  border-radius: 14px;
+  background: #17271ee6;
+  color: #ffe8db;
+  pointer-events: none;
+}
+.survival-hud strong {
+  color: #ff8e83;
+  font-size: 20px;
+}
+.survival-hud span {
+  font-size: 12px;
+}
+.survival-hud.danger {
+  background: #a62b22ee;
+  animation: danger-pulse 0.35s infinite alternate;
+}
+.combat-notice {
+  position: absolute;
+  top: 42%;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #fff3ce;
+  background: #263826db;
+  padding: 12px 22px;
+  border-radius: 12px;
+  pointer-events: none;
+  text-align: center;
+}
+@keyframes danger-pulse {
+  to {
+    box-shadow: 0 0 25px #ff4533;
+  }
+}
+@media (max-width: 700px) {
+  .survival-hud {
+    top: 235px;
+    left: 12px;
+    right: auto;
+    padding: 8px;
+    max-width: 220px;
+  }
+  .survival-hud strong {
+    font-size: 15px;
+  }
+}

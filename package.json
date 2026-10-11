@@ -10,10 +10,11 @@
     "build": "vinext build",
     "build:pages": "vite build --config vite.pages.config.ts",
     "preview:pages": "vite preview --config vite.pages.config.ts",
-    "start": "wrangler dev --config dist/server/wrangler.json",
+    "start": "vite --config vite.pages.config.ts --host 127.0.0.1 --port 4173",
     "lint": "oxlint",
     "format": "oxfmt",
-    "test": "node --experimental-strip-types --test tests/*.test.ts"
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "start:worker": "wrangler dev --config dist/server/wrangler.json"
   },
   "dependencies": {
     "@base-ui/react": "1.7.0",

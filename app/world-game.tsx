@@ -1,4 +1,5 @@
 'use client';
+import { RELICS } from '@/lib/adventure';
 import { useEffect, useRef, useState } from 'react';
 import {
   ArrowRight,
@@ -200,6 +201,18 @@ export default function Game() {
                 <ArrowRight size={21} />
               </Button>
             )}
+            <div className="adventure-intro">
+              {locale === 'zh-CN'
+                ? '躲开苦力怕，寻找 8 枚发光遗物。左键攻击，闪白时快跑。3 枚解锁疾跑，5 枚解锁二段跳。屋顶上的那枚？搭楼梯试试。'
+                : 'Dodge creepers and find 8 glowing relics. Left click to punch; run when they flash. Collect 3 for speed boots, 5 for double jump. The rooftop relic? Build your way up.'}
+            </div>
+            {state.adventure?.collected.length === RELICS.length && (
+              <Button onClick={() => game.current?.restartAdventure()}>
+                {locale === 'zh-CN'
+                  ? '再来一局 · 挑战最快纪录'
+                  : 'New treasure run · Beat your best'}
+              </Button>
+            )}
             <div className="start-note">{t.startNote}</div>
             {state.ready && (
               <div className="session-tools">
@@ -285,6 +298,55 @@ export default function Game() {
       )}
       {state.playing && (
         <>
+          <aside
+            className="adventure-hud"
+            aria-label={locale === 'zh-CN' ? '探险进度' : 'Adventure progress'}
+          >
+            <strong>
+              ✦ {locale === 'zh-CN' ? '林间寻宝' : 'Grove treasure hunt'} ·{' '}
+              {state.adventure?.collected.length ?? 0}/8
+            </strong>
+            <div className="relic-progress">
+              {RELICS.map((r, i) => (
+                <span
+                  key={i}
+                  className={
+                    state.adventure?.collected.includes(i) ? 'found' : ''
+                  }
+                  title={locale === 'zh-CN' ? r.zh : r.en}
+                >
+                  ◆
+                </span>
+              ))}
+            </div>
+            <p>
+              {Math.floor((state.adventure?.elapsed ?? 0) / 60)}:
+              {String(
+                Math.floor((state.adventure?.elapsed ?? 0) % 60),
+              ).padStart(2, '0')}
+              {state.adventure?.best != null &&
+                ` · ${locale === 'zh-CN' ? '最佳' : 'Best'} ${state.adventure.best.toFixed(1)}s`}
+            </p>
+            <p>
+              {(state.adventure?.collected.length ?? 0) === 8
+                ? locale === 'zh-CN'
+                  ? '全部找到！暂停后可开启新一局。'
+                  : 'All found! Pause to start another run.'
+                : (() => {
+                    const r = RELICS.find(
+                      (_, i) => !state.adventure?.collected.includes(i),
+                    )!;
+                    return locale === 'zh-CN'
+                      ? `下一站：${r.zh} · X ${r.x} / Z ${r.z}`
+                      : `Next: ${r.en} · X ${r.x} / Z ${r.z}`;
+                  })()}
+            </p>
+            <small>
+              {locale === 'zh-CN'
+                ? '3 ◆ 疾跑 · 5 ◆ 二段跳 · 靠近自动收集'
+                : '3 ◆ Speed · 5 ◆ Double jump · Walk into relics'}
+            </small>
+          </aside>
           <div className="crosshair" aria-hidden="true" />
           <div className="target-label">{blockName(locale, state.target)}</div>
           <div className="play-tip">
@@ -367,7 +429,9 @@ export default function Game() {
           </div>
           <div className="touch-actions">
             <Button onClick={() => game.current?.jump()}>{t.jump}</Button>
-            <Button onClick={() => game.current?.action()}>{t.mine}</Button>
+            <Button onClick={() => game.current?.action()}>
+              {locale === 'zh-CN' ? '攻击 / 挖掘' : 'Punch / Mine'}
+            </Button>
             <Button onClick={() => game.current?.action(true)}>
               {t.place}
             </Button>

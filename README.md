@@ -20,13 +20,12 @@ You need Node.js 22.13 or later, npm, and a browser with WebGL support. Installi
 
 ```bash
 npm install
-npm run build
-npm run start -- --ip 127.0.0.1 --port 4173
+npm start
 ```
 
-Open <http://127.0.0.1:4173> in your browser and click **Enter world**. Keep the terminal running; press `Ctrl+C` to stop the server.
+Open <http://127.0.0.1:4173/my-minecraft-world/> in your browser and click **Enter world**. Keep the terminal running; press `Ctrl+C` to stop the server.
 
-For development, run `npm run dev` and open the local address printed in the terminal.
+`npm start` needs no prior build and reloads game changes. To debug the Cloudflare Worker version, use `npm run dev`; to preview its build output, run `npm run build` followed by `npm run start:worker`.
 
 ## GitHub Pages
 
@@ -56,11 +55,11 @@ Open the address printed in the terminal, including `/my-minecraft-world/`. This
 
 The world includes a cabin, a bridge, a river, trees, a wheat field, and two decorative sheep. It features gravity, collision detection, mining particles, and six customizable hotbar slots and a palette of all 13 editable materials. You play in first person with a visible arm. The touch interface provides buttons for movement, jumping, mining, and placing blocks.
 
-This is a small creative-mode game. **Your world is saved automatically in this browser**, including block changes, position, view, and hotbar. Edits save immediately; movement saves periodically and when paused. Wait for **Saved in this browser** before closing. Storage is device- and browser-specific, may be unavailable or cleared by the browser, and does not sync between devices. Use **Export world** in the pause menu to keep a JSON backup, then **Import world** to restore it on another device. Importing asks before replacing the current world.
+This is a small adventure game with free building, treasure and creeper combat. **Your world is saved automatically in this browser**, including block changes, position, view, and hotbar. Edits save immediately; movement saves periodically and when paused. Wait for **Saved in this browser** before closing. Storage is device- and browser-specific, may be unavailable or cleared by the browser, and does not sync between devices. Use **Export world** in the pause menu to keep a JSON backup, then **Import world** to restore it on another device. Importing asks before replacing the current world.
 
 Undo and redo cover the most recent 200 edits in the current session; reloading or importing starts a fresh undo history. A change that would place a solid block inside the player waits until the player moves away. Materials selected in the palette replace the currently selected hotbar slot. Bedrock stays protected.
 
-If browser storage is blocked or a saved file is unreadable, the game stays playable and offers export instead of overwriting the existing save. If another tab saves first, this tab stops automatic writes and asks you to export before reloading. Multiplayer and survival systems are not implemented. The sheep remain decorative, without farming mechanics.
+If browser storage is blocked or a saved file is unreadable, the game stays playable and offers export instead of overwriting the existing save. If another tab saves first, this tab stops automatic writes and asks you to export before reloading. Multiplayer is not implemented. The sheep remain decorative, without farming mechanics.
 
 ## Blender project
 
@@ -99,3 +98,22 @@ npm run build
 Tests cover physics, editable boundaries, undo/redo, snapshot validation, persistence transactions and conflicting tabs (using an IndexedDB test implementation), independent touch pointers, and language preferences. Basic movement and block interactions were checked in a local browser on the previous version. Browser interaction and physical-phone acceptance testing for this branch remain pending.
 
 This is an independent project inspired by Minecraft's block-based style. It is not affiliated with Mojang or Microsoft.
+
+## Treasure adventure
+
+Find eight spinning golden relics across the pumpkin patch, bridge, forest, mountains and cabin rooftop. Walk into them to collect. The HUD shows your next destination, coordinates, progress and active play time. Build stairs to reach the roof.
+
+- Three relics unlock faster movement and sprinting.
+- Five relics unlock a second jump in midair.
+- All eight record your personal best. Start another run from the pause menu; unlocked abilities carry into subsequent runs.
+
+Pausing stops the timer. Adventure progress is included in autosaves and JSON exports; older saves remain compatible. This is a casual personal challenge, not a competitive or tamper-proof leaderboard.
+
+
+## Creepers and survival
+
+Five creepers patrol the wilds. They chase visible players and hop over low obstacles. At close range they flash during a 1.6-second fuse. Escape or break line of sight with a solid wall to defuse. Aim and left-click (touch: Punch / Mine) to knock them back; three punches defeat one.
+
+Explosions destroy nearby editable blocks but preserve bedrock. Walls block immediate damage but may themselves be destroyed. At zero health you respawn at home with full health and keep your relics. The four-block radius in front of home is safe; R also returns home and heals. Defeated or exploded creepers return after 30 seconds of active play. Pausing freezes enemies and fuses. Health is saved; enemy positions reset on reload or import.
+
+This is forgiving survival: death keeps your world and treasure progress. Explosion edits enter the existing undo history, which retains the latest 200 block edits.
