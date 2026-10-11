@@ -955,6 +955,7 @@ export class VoxelGame {
   }
   restartAdventure() {
     if (!this.adventure.restart()) return;
+    this.resetCreepers();
     this.airJumpUsed = false;
     this.respawn();
     this.markDirty();

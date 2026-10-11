@@ -56,11 +56,11 @@ Open the address printed in the terminal, including `/my-minecraft-world/`. This
 
 The world includes a cabin, a bridge, a river, trees, a wheat field, and two decorative sheep. It features gravity, collision detection, mining particles, and six customizable hotbar slots and a palette of all 13 editable materials. You play in first person with a visible arm. The touch interface provides buttons for movement, jumping, mining, and placing blocks.
 
-This is a small creative-mode game. **Your world is saved automatically in this browser**, including block changes, position, view, and hotbar. Edits save immediately; movement saves periodically and when paused. Wait for **Saved in this browser** before closing. Storage is device- and browser-specific, may be unavailable or cleared by the browser, and does not sync between devices. Use **Export world** in the pause menu to keep a JSON backup, then **Import world** to restore it on another device. Importing asks before replacing the current world.
+This is a small adventure game with free building, treasure and creeper combat. **Your world is saved automatically in this browser**, including block changes, position, view, and hotbar. Edits save immediately; movement saves periodically and when paused. Wait for **Saved in this browser** before closing. Storage is device- and browser-specific, may be unavailable or cleared by the browser, and does not sync between devices. Use **Export world** in the pause menu to keep a JSON backup, then **Import world** to restore it on another device. Importing asks before replacing the current world.
 
 Undo and redo cover the most recent 200 edits in the current session; reloading or importing starts a fresh undo history. A change that would place a solid block inside the player waits until the player moves away. Materials selected in the palette replace the currently selected hotbar slot. Bedrock stays protected.
 
-If browser storage is blocked or a saved file is unreadable, the game stays playable and offers export instead of overwriting the existing save. If another tab saves first, this tab stops automatic writes and asks you to export before reloading. Multiplayer and survival systems are not implemented. The sheep remain decorative, without farming mechanics.
+If browser storage is blocked or a saved file is unreadable, the game stays playable and offers export instead of overwriting the existing save. If another tab saves first, this tab stops automatic writes and asks you to export before reloading. Multiplayer is not implemented. The sheep remain decorative, without farming mechanics.
 
 ## Blender project
 

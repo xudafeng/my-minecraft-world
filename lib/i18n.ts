@@ -34,7 +34,7 @@ const en = {
   canvasLabel: 'First-person voxel world',
   brand: 'Forest Cabin',
   subtitle: 'My Minecraft World',
-  weather: 'Sunny · Creative mode',
+  weather: 'Sunny · Treasure adventure',
   languageLabel: 'Language',
   pause: 'Pause game',
   eyebrow: 'YOUR LITTLE WORLD',
@@ -92,7 +92,7 @@ const en = {
     unavailable: 'Browser save unavailable · Export a backup',
     conflict: 'Another tab saved this world · Export before reloading',
   },
-  playingFooter: 'Creative mode',
+  playingFooter: 'Treasure adventure',
   welcomeFooter: 'A cabin, a forest, and your imagination.',
   errors: {
     webgl:
@@ -141,7 +141,7 @@ const zh: Dictionary = {
   canvasLabel: '第一人称方块世界',
   brand: '林间小屋',
   subtitle: '我的方块世界',
-  weather: '晴天 · 创造模式',
+  weather: '晴天 · 寻宝探险',
   languageLabel: '语言',
   pause: '暂停游戏',
   eyebrow: '你的方块小世界',
@@ -195,7 +195,7 @@ const zh: Dictionary = {
     unavailable: '浏览器存档不可用 · 请导出备份',
     conflict: '其他标签页已保存此世界 · 刷新前请先导出',
   },
-  playingFooter: '创造模式',
+  playingFooter: '寻宝探险',
   welcomeFooter: '一座小屋，一片树林，和你的想象力。',
   errors: {
     webgl: '无法启动 3D 画面，请使用支持 WebGL 的浏览器，并开启硬件加速。',
