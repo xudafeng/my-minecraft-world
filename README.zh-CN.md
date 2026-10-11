@@ -20,13 +20,12 @@ _上图是 Blender 渲染图。网页游戏用 Three.js 重新搭建了同主题
 
 ```bash
 npm install
-npm run build
-npm run start -- --ip 127.0.0.1 --port 4173
+npm start
 ```
 
-在浏览器打开 <http://127.0.0.1:4173>，点击「Enter world」（进入世界）。保持终端运行，按 `Ctrl+C` 停止服务。
+在浏览器打开 <http://127.0.0.1:4173/my-minecraft-world/>，点击「Enter world」（进入世界）。保持终端运行，按 `Ctrl+C` 停止服务。
 
-修改代码时可以使用 `npm run dev`，打开终端打印的本地地址。
+`npm start` 无需预先构建，修改游戏代码会自动刷新。需要调试 Cloudflare Worker 版本时，可运行 `npm run dev`；预览其构建产物则先运行 `npm run build`，再运行 `npm run start:worker`。
 
 ## GitHub Pages
 

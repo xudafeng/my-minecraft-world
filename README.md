@@ -20,13 +20,12 @@ You need Node.js 22.13 or later, npm, and a browser with WebGL support. Installi
 
 ```bash
 npm install
-npm run build
-npm run start -- --ip 127.0.0.1 --port 4173
+npm start
 ```
 
-Open <http://127.0.0.1:4173> in your browser and click **Enter world**. Keep the terminal running; press `Ctrl+C` to stop the server.
+Open <http://127.0.0.1:4173/my-minecraft-world/> in your browser and click **Enter world**. Keep the terminal running; press `Ctrl+C` to stop the server.
 
-For development, run `npm run dev` and open the local address printed in the terminal.
+`npm start` needs no prior build and reloads game changes. To debug the Cloudflare Worker version, use `npm run dev`; to preview its build output, run `npm run build` followed by `npm run start:worker`.
 
 ## GitHub Pages
 
