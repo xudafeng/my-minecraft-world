@@ -1060,3 +1060,77 @@ kbd {
     font-size: 15px;
   }
 }
+
+.camp-panel {
+  margin: 14px 0;
+  text-align: left;
+  border: 1px solid #c3ceba;
+  border-radius: 12px;
+  padding: 12px;
+  background: #edf2e8;
+}
+.camp-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.camp-panel p,
+.camp-panel small {
+  font-size: 11px;
+  line-height: 1.5;
+}
+.camp-panel p {
+  margin: 8px 0;
+}
+.resource-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 8px 0;
+}
+.resource-list span {
+  font-size: 11px;
+  background: #dce5d4;
+  border-radius: 5px;
+  padding: 3px 6px;
+}
+.recipe-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+}
+.recipe-list button {
+  height: auto;
+  min-height: 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  white-space: normal;
+  padding: 6px 8px;
+  background: #fff;
+  border: 1px solid #d6ddcd;
+}
+.recipe-list strong {
+  font-size: 11px;
+}
+.recipe-list small {
+  font-size: 10px;
+  color: #62715d;
+}
+.activity-notice {
+  position: absolute;
+  top: 32%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #142921e8;
+  color: #ffe7a0;
+  padding: 12px 20px;
+  border-radius: 12px;
+  text-align: center;
+  pointer-events: none;
+}
+.start-card {
+  max-height: calc(100dvh - 120px);
+  overflow-y: auto;
+}

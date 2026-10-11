@@ -114,6 +114,14 @@ Pausing stops the timer. Adventure progress is included in autosaves and JSON ex
 
 Five creepers patrol the wilds. They chase visible players and hop over low obstacles. At close range they flash during a 1.6-second fuse. Escape or break line of sight with a solid wall to defuse. Aim and left-click (touch: Punch / Mine) to knock them back; three punches defeat one.
 
-Explosions destroy nearby editable blocks but preserve bedrock. Walls block immediate damage but may themselves be destroyed. At zero health you respawn at home with full health and keep your relics. The four-block radius in front of home is safe; R also returns home and heals. Defeated or exploded creepers return after 30 seconds of active play. Pausing freezes enemies and fuses. Health is saved; enemy positions reset on reload or import.
+Explosions destroy nearby editable blocks but preserve bedrock. Walls block immediate damage but may themselves be destroyed. At zero health you respawn at home with full health and keep your relics. The four-block radius at home is safe and gradually heals during daylight, but loses protection at night. R returns home without instant healing. Defeated enemies rest during daylight and return after 30 active seconds at night. Pausing freezes enemies and fuses. Health is saved; enemy positions reset on reload or import.
 
-This is forgiving survival: death keeps your world and treasure progress. Explosion edits enter the existing undo history, which retains the latest 200 block edits.
+This is forgiving survival: death keeps your world and treasure progress. Undo/redo is disabled in adventure to prevent material duplication; creative retains the latest 200 edits.
+
+## Day, night and crafting
+
+Adventure is the default: 180-second days and 90-second nights, frozen while paused. Each dusk brings five creepers near camp. The sky and lighting change with time. Dawn awards 4 wood, 4 stone and 1 pumpkin. Mining gathers the block material; placing spends it. Start with 20 wood, 12 stone, 10 dirt and 2 pumpkins.
+
+Open the pause menu or Craft / Camp for recipes: 1 log → 4 planks; 3 sand → 3 glass; 3 planks → 3 roof blocks; 6 planks + 8 stone → a stone sword (two-hit defeats); 1 pumpkin → a meal healing 35; 12 planks + 12 stone → a camp healing upgrade (three levels). Defeated creepers drop 2 stone.
+
+Inventory, sword, camp upgrades, cycle time and nights survived are saved. Switch to creative in the pause menu for unlimited building and no enemies while preserving adventure inventory. Both modes share the edited world. Dawn rewards count active-time transitions even if you died during that night; treasure and resources are kept on death. This is forgiving solo play, not a competitive rule set.

@@ -1,4 +1,5 @@
 'use client';
+import { RECIPES, type Recipe } from '@/lib/survival';
 import { RELICS } from '@/lib/adventure';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -127,7 +128,21 @@ export default function Game() {
         <div className="header-right">
           <span className="day-pill">
             <Sun size={16} />
-            {t.weather}
+            {state.night
+              ? locale === 'zh-CN'
+                ? '月夜'
+                : 'Moonlit night'
+              : locale === 'zh-CN'
+                ? '白昼'
+                : 'Daylight'}{' '}
+            ·{' '}
+            {state.survival?.mode === 'creative'
+              ? locale === 'zh-CN'
+                ? '自由建造'
+                : 'Creative'
+              : locale === 'zh-CN'
+                ? '探险'
+                : 'Adventure'}
           </span>
           <div
             className="language-switch"
@@ -213,11 +228,111 @@ export default function Game() {
                   : 'New treasure run · Beat your best'}
               </Button>
             )}
+            {state.ready && (
+              <div className="camp-panel">
+                <div className="camp-title">
+                  <strong>
+                    {locale === 'zh-CN' ? '营地工作台' : 'Camp workbench'}
+                  </strong>
+                  <Button onClick={() => game.current?.toggleMode()}>
+                    {state.survival?.mode === 'creative'
+                      ? locale === 'zh-CN'
+                        ? '切换探险模式'
+                        : 'Switch to adventure'
+                      : locale === 'zh-CN'
+                        ? '切换自由建造'
+                        : 'Switch to creative'}
+                  </Button>
+                </div>
+                <p>
+                  {locale === 'zh-CN'
+                    ? '白天 3 分钟，夜晚 90 秒。夜里安全区失效；采集材料、制作石剑，搭墙挡住爆炸。白天回营地恢复生命。'
+                    : '3-minute days, 90-second nights. Home loses its protection at night. Gather, craft a stone sword and build blast cover. Heal at camp during daylight.'}
+                </p>
+                <p>
+                  ♥ {Math.ceil(state.health ?? 100)}/100 ·{' '}
+                  {state.survival?.sword
+                    ? locale === 'zh-CN'
+                      ? '已装备石剑'
+                      : 'Stone sword equipped'
+                    : locale === 'zh-CN'
+                      ? '徒手'
+                      : 'Bare hands'}
+                </p>
+                {state.activity === 'crafted' && (
+                  <output>{locale === 'zh-CN' ? '制作完成' : 'Crafted'}</output>
+                )}
+                <div className="resource-list">
+                  {Object.entries(state.survival?.inventory ?? {})
+                    .filter(([, n]) => n > 0)
+                    .map(([b, n]) => (
+                      <span key={b}>
+                        {blockName(locale, Number(b))} × {n}
+                      </span>
+                    ))}
+                </div>
+                <div className="recipe-list">
+                  {(Object.keys(RECIPES) as Recipe[]).map((recipe) => {
+                    const names = {
+                      planks: ['木板 ×4', 'Planks ×4'],
+                      glass: ['玻璃 ×3', 'Glass ×3'],
+                      roof: ['屋顶 ×3', 'Roof ×3'],
+                      sword: ['石剑 · 两击击败', 'Stone sword · 2 hits'],
+                      food: ['南瓜餐 · 恢复35', 'Pumpkin meal · Heal 35'],
+                      camp: [
+                        '营地升级 · 加快恢复',
+                        'Camp upgrade · Faster healing',
+                      ],
+                    };
+                    const unlocked =
+                      (recipe === 'sword' && state.survival?.sword) ||
+                      (recipe === 'camp' && (state.survival?.camp ?? 0) >= 3);
+                    const affordable =
+                      state.survival?.mode === 'creative' ||
+                      Object.entries(RECIPES[recipe].cost).every(
+                        ([id, n]) =>
+                          (state.survival?.inventory[Number(id)] ?? 0) >= n,
+                      );
+                    return (
+                      <Button
+                        key={recipe}
+                        disabled={
+                          !!unlocked ||
+                          !affordable ||
+                          (recipe === 'food' && (state.health ?? 100) >= 100)
+                        }
+                        onClick={() => game.current?.craft(recipe)}
+                      >
+                        <strong>
+                          {names[recipe][locale === 'zh-CN' ? 0 : 1]}
+                        </strong>
+                        <small>
+                          {Object.entries(RECIPES[recipe].cost)
+                            .map(
+                              ([id, n]) =>
+                                `${blockName(locale, Number(id))} ${n}`,
+                            )
+                            .join(' + ')}
+                        </small>
+                      </Button>
+                    );
+                  })}
+                </div>
+                <small>
+                  {locale === 'zh-CN'
+                    ? `营地等级 ${state.survival?.camp ?? 0}/3 · 探险模式中放置消耗材料，挖掘回收，撤销关闭`
+                    : `Camp level ${state.survival?.camp ?? 0}/3 · Adventure building consumes materials; mining recovers them; undo is disabled`}
+                </small>
+              </div>
+            )}
             <div className="start-note">{t.startNote}</div>
             {state.ready && (
               <div className="session-tools">
                 {state.started && (
                   <>
+                    <Button onClick={() => game.current?.pause()}>
+                      {locale === 'zh-CN' ? '制作 / 营地' : 'Craft / Camp'}
+                    </Button>
                     <Button onClick={() => game.current?.openPalette()}>
                       <Grid2X2 size={16} />
                       {t.materials}
@@ -298,6 +413,83 @@ export default function Game() {
       )}
       {state.playing && (
         <>
+          <div className={'survival-hud' + (state.danger ? ' danger' : '')}>
+            <strong>
+              ♥ {Math.ceil(state.health ?? 100)}/100{' '}
+              {state.survival?.sword ? '⚔' : '✊'}
+            </strong>
+            <span>
+              {locale === 'zh-CN' ? '第' : 'Day '}
+              {state.day ?? 1}
+              {locale === 'zh-CN' ? '天 · ' : ' · '}
+              {state.night
+                ? locale === 'zh-CN'
+                  ? '夜晚'
+                  : 'Night'
+                : locale === 'zh-CN'
+                  ? '白天'
+                  : 'Daylight'}{' '}
+              {state.phaseRemaining ?? 180}s
+            </span>
+            <span>
+              {state.danger
+                ? locale === 'zh-CN'
+                  ? '苦力怕要爆炸了！快跑！'
+                  : 'Creeper fuse lit! RUN!'
+                : locale === 'zh-CN'
+                  ? '左键攻击 · 白天营地恢复生命'
+                  : 'Left click to attack · Daytime camp heals'}
+            </span>
+            <small>
+              {locale === 'zh-CN' ? '守过的夜晚' : 'Nights survived'}:{' '}
+              {state.survival?.nights ?? 0}
+            </small>
+          </div>
+          {state.activity && (
+            <div className="activity-notice" role="status">
+              {
+                {
+                  resources:
+                    locale === 'zh-CN'
+                      ? '材料不足，先挖掘采集'
+                      : 'Not enough materials. Mine to gather.',
+                  crafted: locale === 'zh-CN' ? '制作完成！' : 'Crafted!',
+                  dawn:
+                    locale === 'zh-CN'
+                      ? '天亮了！奖励：木板4、石头4、南瓜1'
+                      : 'Dawn! Reward: 4 wood, 4 stone, 1 pumpkin',
+                  night:
+                    locale === 'zh-CN'
+                      ? '夜袭开始！营地不再安全，准备战斗'
+                      : 'Night raid! Home is no longer safe.',
+                }[state.activity]
+              }
+            </div>
+          )}
+          {state.combatNotice && (
+            <div className="combat-notice" role="status">
+              {
+                {
+                  hit:
+                    locale === 'zh-CN'
+                      ? '击退！继续攻击'
+                      : 'Knocked back! Keep attacking',
+                  hurt:
+                    locale === 'zh-CN'
+                      ? '被爆炸击中！找掩体'
+                      : 'Blast damage! Find cover',
+                  defeated:
+                    locale === 'zh-CN'
+                      ? '苦力怕已击败 · 石头 +2'
+                      : 'Creeper defeated · Stone +2',
+                  respawn:
+                    locale === 'zh-CN'
+                      ? '你被炸倒了 · 已回营地，遗物保留'
+                      : 'You fell · Respawned at camp, relics kept',
+                }[state.combatNotice]
+              }
+            </div>
+          )}
           <aside
             className="adventure-hud"
             aria-label={locale === 'zh-CN' ? '探险进度' : 'Adventure progress'}
@@ -352,7 +544,13 @@ export default function Game() {
           <div className="play-tip">
             {state.mode === 'drag' ? t.dragActions : t.mouseActions}
             <span>{t.movementHint}</span>
-            <span>{t.editorHint}</span>
+            <span>
+              {state.survival?.mode === 'creative'
+                ? t.editorHint
+                : locale === 'zh-CN'
+                  ? '挖掘采集材料 · 暂停进入营地制作'
+                  : 'Mine to gather · Pause to craft at camp'}
+            </span>
           </div>
           <div className="edit-toolbar">
             <Button
@@ -361,6 +559,9 @@ export default function Game() {
               aria-label={t.undo}
             >
               <Undo2 size={17} />
+            </Button>
+            <Button onClick={() => game.current?.pause()}>
+              {locale === 'zh-CN' ? '制作 / 营地' : 'Craft / Camp'}
             </Button>
             <Button onClick={() => game.current?.openPalette()}>
               <Grid2X2 size={17} />
@@ -376,7 +577,11 @@ export default function Game() {
           </div>
           <div className="hotbar-wrap">
             <span className="selected-name">
-              {blockName(locale, state.hotbar[state.selected])}
+              {blockName(locale, state.hotbar[state.selected])} ·{' '}
+              {state.survival?.mode === 'creative'
+                ? '∞'
+                : (state.survival?.inventory[state.hotbar[state.selected]] ??
+                  0)}
             </span>
             <div className="hotbar" aria-label={t.hotbarLabel}>
               {state.hotbar.map((b, i) => (
