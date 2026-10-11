@@ -3,6 +3,11 @@ import { RECIPES, type Recipe } from '@/lib/survival';
 import { RELICS } from '@/lib/adventure';
 import { useEffect, useRef, useState } from 'react';
 import {
+  Hammer,
+  Sword,
+  Soup,
+  Tent,
+  Layers,
   ArrowRight,
   Pause,
   Home,
@@ -232,6 +237,7 @@ export default function Game() {
               <div className="camp-panel">
                 <div className="camp-title">
                   <strong>
+                    <Hammer size={18} aria-hidden="true" />
                     {locale === 'zh-CN' ? '营地工作台' : 'Camp workbench'}
                   </strong>
                   <Button onClick={() => game.current?.toggleMode()}>
@@ -267,7 +273,11 @@ export default function Game() {
                     .filter(([, n]) => n > 0)
                     .map(([b, n]) => (
                       <span key={b}>
-                        {blockName(locale, Number(b))} × {n}
+                        <i
+                          className={'resource-swatch block-' + b}
+                          aria-hidden="true"
+                        />
+                        {blockName(locale, Number(b))} <b>{n}</b>
                       </span>
                     ))}
                 </div>
@@ -293,8 +303,17 @@ export default function Game() {
                         ([id, n]) =>
                           (state.survival?.inventory[Number(id)] ?? 0) >= n,
                       );
+                    const RecipeIcon = {
+                      planks: Layers,
+                      glass: Box,
+                      roof: Home,
+                      sword: Sword,
+                      food: Soup,
+                      camp: Tent,
+                    }[recipe];
                     return (
                       <Button
+                        className="recipe-card"
                         key={recipe}
                         disabled={
                           !!unlocked ||
@@ -303,17 +322,40 @@ export default function Game() {
                         }
                         onClick={() => game.current?.craft(recipe)}
                       >
-                        <strong>
-                          {names[recipe][locale === 'zh-CN' ? 0 : 1]}
-                        </strong>
-                        <small>
-                          {Object.entries(RECIPES[recipe].cost)
-                            .map(
-                              ([id, n]) =>
-                                `${blockName(locale, Number(id))} ${n}`,
-                            )
-                            .join(' + ')}
-                        </small>
+                        <span className="recipe-icon">
+                          <RecipeIcon size={19} aria-hidden="true" />
+                        </span>
+                        <span className="recipe-copy">
+                          <strong>
+                            {names[recipe][locale === 'zh-CN' ? 0 : 1]}
+                          </strong>
+                          <small>
+                            {Object.entries(RECIPES[recipe].cost)
+                              .map(
+                                ([id, n]) =>
+                                  `${blockName(locale, Number(id))} ${n}`,
+                              )
+                              .join(' + ')}
+                          </small>
+                          <span className="recipe-status">
+                            {unlocked
+                              ? locale === 'zh-CN'
+                                ? '已升级'
+                                : 'Unlocked'
+                              : !affordable
+                                ? locale === 'zh-CN'
+                                  ? '材料不足'
+                                  : 'Need materials'
+                                : recipe === 'food' &&
+                                    (state.health ?? 100) >= 100
+                                  ? locale === 'zh-CN'
+                                    ? '生命已满'
+                                    : 'Full health'
+                                  : locale === 'zh-CN'
+                                    ? '点击制作'
+                                    : 'Craft'}
+                          </span>
+                        </span>
                       </Button>
                     );
                   })}
