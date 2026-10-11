@@ -1134,3 +1134,27 @@ kbd {
   max-height: calc(100dvh - 120px);
   overflow-y: auto;
 }
+
+@media (max-height: 500px) and (min-width: 701px) {
+  .adventure-hud {
+    top: 76px;
+    width: 240px;
+    padding: 10px;
+  }
+  .adventure-hud small {
+    display: none;
+  }
+  .survival-hud {
+    top: 130px;
+    right: 16px;
+    padding: 8px;
+    max-width: 220px;
+  }
+  .survival-hud small {
+    display: none;
+  }
+  .activity-notice {
+    top: 26%;
+    font-size: 12px;
+  }
+}

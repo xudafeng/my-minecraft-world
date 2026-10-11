@@ -206,6 +206,7 @@ export class VoxelGame {
     this.revision = saved.revision;
     this.saveAllowed = saved.available;
     this.state.saveStatus = saved.available ? 'ready' : 'unavailable';
+    if (!saved.snapshot) this.state.selected = HOTBAR.indexOf(BLOCK.wood);
     if (saved.snapshot) {
       this.restore(saved.snapshot);
       this.state.saveStatus = 'saved';
